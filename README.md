@@ -1,41 +1,52 @@
-# Kansas Host–Parasite Atlas — Prototype
+# Kansas Host–Parasite Atlas — Version 2
 
-This prototype was generated from the supplied manual Arctos export.
+Static GitHub Pages-ready prototype built from the full supplied KSB Arctos export.
 
-## Open the map
+## Dataset represented
 
-Open `index.html` in a web browser while connected to the internet. The specimen
-data are embedded directly in the HTML, so no local web server is required.
-Internet access is only needed for Leaflet/OpenStreetMap assets.
+- 7,775 mammal records
+- 7,554 records with decimal coordinates
+- 221 records retained in the normalized CSV but not mappable
+- 163 host species
+- 932 hosts with retained parasite material
+- 1,101 retained parasite part records
 
-## Current prototype features
+## Website features
 
-- Maps all specimens with decimal coordinates.
-- Filters by host species and screening status.
-- Searches by GUID, species, or locality.
-- Keeps `DETECTED` and `NOT_DETECTED` separate.
-- Parses retained parasite parts from `PARTDETAIL`.
-- Conservatively extracts flea, mite, tick, and louse/lice counts when those
-  counts are explicitly stated in part remarks.
-- Links every popup to the authoritative Arctos GUID.
-- Does not interpret a missing parasite record as a negative observation.
+- Leaflet map with MarkerCluster for thousands of specimen points
+- Genus and species filters
+- Parasite screening-status filter
+- Retained parasite-material filters
+- Filters for explicit flea, mite, tick, and louse counts in part remarks
+- Search by GUID, taxon, or locality
+- Popups link to both the host GUID and individual retained Arctos parts
+- Missing coordinates do not cause data loss
+- Screening results and retained parasite material remain distinct concepts
 
-## Files
+## GitHub Pages
 
-- `index.html`: interactive website prototype.
-- `data/specimens.geojson`: map-ready specimen data.
-- `data/specimens_normalized.csv`: one row per mammal host.
-- `data/parasite_parts.csv`: one row per retained parasite part.
-- `scripts/process_arctos.py`: reusable parser for future manual exports.
+Upload the CONTENTS of this folder to the root of your GitHub repository so `index.html`
+is visible at the repository root.
 
-## Future API version
+Then enable:
 
-When Arctos API access is available, the data acquisition step can be replaced
-with a scheduled API request. The normalization logic and website data model can
-remain substantially the same.
+Settings → Pages → Deploy from a branch → main → / (root)
 
-## Important interpretation note
+## Updating from another manual Arctos export
 
-Screening status and retained material are distinct. A value in `DETECTED`
-records an observation, while a parasite part in `PARTDETAIL` represents retained
-material. The prototype intentionally preserves that distinction.
+Run:
+
+    python scripts/process_arctos_v2.py arctos_export.csv data
+
+The processor recreates the normalized tables and GeoJSON. Note that this packaged
+`index.html` currently embeds the generated GeoJSON so it can also open directly as
+a local file. For fully automated API updates, Version 3 should load a generated
+data file instead or use a build step to regenerate `index.html`.
+
+## Interpretation
+
+`DETECTED` / `NOT_DETECTED` are observations or screening information.
+`PARTDETAIL` represents retained specimen material. Absence of a parasite part is
+not interpreted as parasite absence.
+
+Arctos GUID links are retained so Arctos remains the authoritative specimen source.
