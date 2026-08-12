@@ -1,0 +1,23 @@
+{
+  "total_records": 7775,
+  "mapped_records": 7554,
+  "unmapped_records": 221,
+  "host_species": 163,
+  "host_genera": 96,
+  "hosts_with_retained_parasite_material": 932,
+  "parasite_part_records": 1101,
+  "status_counts": {
+    "not recorded": 2308,
+    "detected": 1981,
+    "material present": 54,
+    "not detected": 2059,
+    "mixed screening": 1373
+  },
+  "part_type_counts": {
+    "ectoparasite": 749,
+    "endoparasite": 228,
+    "cestode": 63,
+    "nematode": 54,
+    "trematode": 7
+  }
+}
