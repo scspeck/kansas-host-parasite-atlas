@@ -1,4 +1,4 @@
-# Host–Parasite Relational Atlas — Host-Centered GitHub Version
+# Host–Parasite Relational Atlas - Host-Centered GitHub Version
 
 This practice atlas uses a compact relational JSON architecture designed to fit comfortably within GitHub's browser-upload limits.
 
