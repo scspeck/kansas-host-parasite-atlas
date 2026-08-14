@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Host–Parasite Relational Atlas — Host-Centered Practice</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.css">
+
+<style>
+:root {
+  --border:#d9e0e4; --muted:#68737a; --panel:#fff; --bg:#f3f5f6; --text:#1d252c;
+  --parasite:#7b4ca0; --host:#2e7d4f;
+}
+* { box-sizing:border-box; }
+html,body { height:100%; margin:0; font-family:Arial,Helvetica,sans-serif; color:var(--text); background:var(--bg); }
+body { display:grid; grid-template-columns:370px 1fr; }
+aside { padding:20px; background:var(--panel); border-right:1px solid var(--border); overflow:auto; z-index:1001; }
+#map { height:100vh; width:100%; }
+h1 { font-size:1.4rem; margin:0 0 4px; }
+.subtitle { color:var(--muted); font-size:.85rem; line-height:1.45; margin-bottom:15px; }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 18px; }
+.stat { border:1px solid var(--border); background:#f7f9fa; border-radius:8px; padding:9px; }
+.stat strong { display:block; font-size:1.15rem; }
+.stat span { color:var(--muted); font-size:.73rem; }
+label.section { display:block; font-weight:700; font-size:.84rem; margin:14px 0 5px; }
+select,input[type=text] { width:100%; padding:8px 9px; border:1px solid #bac4ca; border-radius:6px; background:#fff; }
+button { padding:8px 10px; border:0; border-radius:6px; cursor:pointer; }
+#reset { width:100%; background:#29353d; color:#fff; margin-top:14px; }
+.year-values { display:flex; justify-content:space-between; margin:4px 0 6px; font-weight:700; font-size:.82rem; }
+#yearSlider { margin:14px 10px 18px; }
+.noUi-connect { background:#687680; }
+.noUi-horizontal { height:8px; }
+.noUi-horizontal .noUi-handle { width:20px; height:20px; right:-10px; top:-7px; border-radius:50%; cursor:grab; }
+.noUi-handle::before,.noUi-handle::after { display:none; }
+.checks label { display:block; margin:6px 0; font-size:.83rem; }
+.small { color:var(--muted); font-size:.75rem; line-height:1.45; }
+.legend { margin-top:17px; padding-top:12px; border-top:1px solid var(--border); font-size:.82rem; }
+.dot { width:11px; height:11px; display:inline-block; border-radius:50%; margin-right:6px; vertical-align:-1px; }
+.popup-title { font-size:1rem; }
+.popup-guid { font-family:monospace; color:#59656d; font-size:.77rem; }
+.popup-section { margin-top:9px; }
+.leaflet-popup-content { min-width:270px; max-width:390px; max-height:420px; overflow:auto; }
+a { color:#245d8c; }
+#loadError { display:none; background:#fff2f0; border:1px solid #c86c61; padding:9px; border-radius:6px; font-size:.82rem; margin-bottom:10px; }
+@media(max-width:800px) {
+ body { display:block; }
+ aside { height:auto; border-right:0; border-bottom:1px solid var(--border); }
+ #map { height:72vh; }
+}
+</style>
+</head>
+
+<body>
+<aside>
+  <h1>Host–Parasite Relational Atlas</h1>
+  <div class="subtitle">
+    Host-centered practice version. Each map point represents one host GUID, with all linked parasite records listed in the popup. Parasite filters determine which hosts remain visible.
+  </div>
+
+  <div id="loadError">The data file could not be loaded. Use GitHub Pages or a local web server.</div>
+
+  <div class="stats">
+    <div class="stat"><strong>51,316</strong><span>parasite records</span></div>
+    <div class="stat"><strong>30,849</strong><span>unique hosts</span></div>
+    <div class="stat"><strong>51,790</strong><span>host–parasite links</span></div>
+    <div class="stat"><strong>Host-centered</strong><span>map architecture</span></div>
+  </div>
+<label class="section">Collection year</label>
+  <div class="year-values"><span id="startYearLabel">—</span><span id="endYearLabel">—</span></div>
+  <div id="yearSlider"></div>
+  <div class="checks">
+    <label><input type="checkbox" id="includeUnknownYear"> Include records without an explicit four-digit year</label>
+  </div>
+
+  <label class="section" for="hostGroup">Host group</label>
+  <select id="hostGroup"><option value="">All host groups</option></select>
+
+  <label class="section" for="hostCollection">Host collection</label>
+  <select id="hostCollection"><option value="">All host collections</option></select>
+
+  <label class="section" for="parasiteGenus">Parasite genus</label>
+  <select id="parasiteGenus"><option value="">All genera</option></select>
+
+  <label class="section" for="parasiteSpecies">Parasite species</label>
+  <select id="parasiteSpecies"><option value="">All species</option></select>
+
+  <label class="section" for="hostTaxon">Host taxon contains</label>
+  <input id="hostTaxon" type="text" placeholder="e.g. Myodes rutilus">
+
+  <label class="section" for="search">GUID / taxon search</label>
+  <input id="search" type="text" placeholder="MSB:Para:1, UAM:Mamm:..., taxon...">
+
+  <button id="reset">Reset filters</button>
+  <div id="resultNote" class="small" style="margin-top:8px;"></div>
+
+  <div class="legend">
+    <div><span class="dot" style="background:var(--host)"></span>Host record</div>
+    <p class="small">
+      Each point is one host GUID. Parasite filters keep only hosts containing matching parasite records. Host coordinates are inferred from linked parasite records in this practice dataset.
+    </p>
+  </div>
+</aside>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.js"></script>
+
+<script>
+let D=null;
+let hostRelationships=[];
+
+const map=L.map("map").setView([39,-98],4);
+const streets=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"});
+const topo=L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"Map data &copy; OpenStreetMap contributors | Map style &copy; OpenTopoMap"});
+const satellite=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Tiles &copy; Esri"});
+const light=L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:20,attribution:"&copy; OpenStreetMap contributors &copy; CARTO"});
+streets.addTo(map);
+L.control.layers({"Street Map":streets,"Topographic":topo,"Satellite":satellite,"Light":light},null,{position:"topright"}).addTo(map);
+
+const cluster=L.markerClusterGroup({chunkedLoading:true,showCoverageOnHover:false,maxClusterRadius:55});
+map.addLayer(cluster);
+
+const hostGroup=document.getElementById("hostGroup");
+const hostCollection=document.getElementById("hostCollection");
+const parasiteGenus=document.getElementById("parasiteGenus");
+const parasiteSpecies=document.getElementById("parasiteSpecies");
+const hostTaxon=document.getElementById("hostTaxon");
+const search=document.getElementById("search");
+const includeUnknownYear=document.getElementById("includeUnknownYear");
+const yearSlider=document.getElementById("yearSlider");
+const startYearLabel=document.getElementById("startYearLabel");
+const endYearLabel=document.getElementById("endYearLabel");
+
+function s(id) { return id===-1 || id===null || id===undefined ? "" : D.s[id]; }
+function parasite(pid) {
+  const m=D.m[pid];
+  return {guid:s(m[0]),name:s(m[1]),genus:s(m[2]),species:s(m[3])};
+}
+function host(hid) {
+  const h=D.h[hid];
+  return {guid:s(h[0]),taxon:s(h[1]),collection:s(h[2]),group:s(h[3]),lat:h[4],lon:h[5],minYear:h[6],maxYear:h[7]};
+}
+function esc(v) {
+  if(v===null||v===undefined) return "";
+  return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
+function fillSelect(el,values,label) {
+  el.innerHTML=`<option value="">${label}</option>`;
+  [...new Set(values.filter(Boolean))].sort().forEach(v=>{
+    const o=document.createElement("option"); o.value=v; o.textContent=v; el.appendChild(o);
+  });
+}
+function rebuildFilters() {
+  fillSelect(hostGroup,D.h.map((x,i)=>host(i).group),"All host groups");
+  fillSelect(hostCollection,D.h.map((x,i)=>host(i).collection),"All host collections");
+  fillSelect(parasiteGenus,D.m.map((x,i)=>parasite(i).genus),"All genera");
+  rebuildParasiteSpecies();
+}
+function rebuildParasiteSpecies() {
+  const g=parasiteGenus.value;
+  fillSelect(parasiteSpecies,D.m.map((x,i)=>parasite(i)).filter(p=>!g||p.genus===g).map(p=>p.species),"All species");
+}
+function yearBounds() {
+  const vals=yearSlider.noUiSlider.get();
+  return [Math.round(Number(vals[0])),Math.round(Number(vals[1]))];
+}
+
+function hostPasses(hid) {
+  const h=host(hid);
+  if(h.lat===null || h.lon===null) return false;
+
+  if(hostGroup.value && h.group!==hostGroup.value) return false;
+  if(hostCollection.value && h.collection!==hostCollection.value) return false;
+
+  const ht=hostTaxon.value.trim().toLowerCase();
+  if(ht && !h.taxon.toLowerCase().includes(ht)) return false;
+
+  const rels=hostRelationships[hid]||[];
+  const [minY,maxY]=yearBounds();
+
+  const matchingRels=rels.filter(ri=>{
+    const r=D.r[ri];
+    const year=r[2];
+    const p=parasite(r[0]);
+
+    if(year===-1) {
+      if(!includeUnknownYear.checked) return false;
+    } else if(year<minY || year>maxY) {
+      return false;
+    }
+
+    if(parasiteGenus.value && p.genus!==parasiteGenus.value) return false;
+    if(parasiteSpecies.value && p.species!==parasiteSpecies.value) return false;
+
+    return true;
+  });
+
+  if(!matchingRels.length) return false;
+
+  const q=search.value.trim().toLowerCase();
+  if(q) {
+    if(`${h.guid} ${h.taxon}`.toLowerCase().includes(q)) return true;
+
+    if(!matchingRels.some(ri=>{
+      const p=parasite(D.r[ri][0]);
+      return `${p.guid} ${p.name}`.toLowerCase().includes(q);
+    })) return false;
+  }
+
+  return true;
+}
+
+function hostPopup(hid) {
+  const h=host(hid);
+  const rels=hostRelationships[hid]||[];
+
+  const counts=new Map();
+  for(const ri of rels) {
+    const p=parasite(D.r[ri][0]);
+    const name=p.name||"Unidentified parasite";
+    counts.set(name,(counts.get(name)||0)+1);
+  }
+
+  const top=[...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
+
+  const linked=rels.slice(0,50).map(ri=>{
+    const r=D.r[ri];
+    const p=parasite(r[0]);
+    const year=r[2]===-1 ? "year unknown" : r[2];
+    return `<div class="popup-section">
+      <i>${esc(p.name||"Unidentified parasite")}</i><br>
+      <span class="popup-guid">${esc(p.guid)}</span><br>
+      <span class="small">${year}</span><br>
+      <a href="https://arctos.database.museum/guid/${encodeURIComponent(p.guid)}" target="_blank" rel="noopener">Open parasite in Arctos ↗</a>
+    </div>`;
+  }).join("");
+
+  return `
+    <div class="popup-title"><i>${esc(h.taxon||"Host")}</i></div>
+    <div class="popup-guid">${esc(h.guid)}</div>
+
+    <div class="popup-section">
+      <b>Host collection:</b> ${esc(h.collection||"Not recorded")}<br>
+      <b>Associated parasite records:</b> ${rels.length.toLocaleString()}<br>
+      <b>Parasite taxa:</b> ${counts.size.toLocaleString()}
+    </div>
+
+    ${top.length ? `<div class="popup-section"><b>Most frequent parasite identifications</b><br>${top.map(([n,c])=>`<div><i>${esc(n)}</i> <span class="small">(${c})</span></div>`).join("")}</div>` : ""}
+
+    <div class="popup-section"><b>Linked parasite records</b></div>
+    ${linked || '<div class="small">No linked parasite records.</div>'}
+    ${rels.length>50 ? '<div class="small">Showing first 50 linked parasite records.</div>' : ""}
+
+    <div class="popup-section">
+      <a href="https://arctos.database.museum/guid/${encodeURIComponent(h.guid)}" target="_blank" rel="noopener">Open host in Arctos ↗</a>
+    </div>`;
+}
+
+function render() {
+  if(!D || !yearSlider.noUiSlider) return;
+
+  cluster.clearLayers();
+  const markers=[];
+  let count=0;
+
+  for(let hid=0;hid<D.h.length;hid++) {
+    if(!hostPasses(hid)) continue;
+
+    count++;
+    const h=host(hid);
+    const size=Math.min(12,5+Math.log2(Math.max(1,(hostRelationships[hid]||[]).length)));
+
+    const m=L.circleMarker([h.lat,h.lon],{
+      radius:size,
+      weight:1.5,
+      color:"#fff",
+      fillColor:"#2e7d4f",
+      fillOpacity:.86
+    });
+
+    m.bindPopup(hostPopup(hid));
+    markers.push(m);
+  }
+
+  cluster.addLayers(markers);
+
+  document.getElementById("resultNote").textContent=
+    `${count.toLocaleString()} mapped hosts match the current filters.`;
+}
+
+async function init() {
+  try {
+    const resp=await fetch("data/atlas.json");
+    if(!resp.ok) throw new Error("Data request failed");
+    D=await resp.json();
+
+    hostRelationships=Array.from({length:D.h.length},()=>[]);
+    D.r.forEach((r,i)=>hostRelationships[r[1]].push(i));
+
+    rebuildFilters();
+
+    noUiSlider.create(yearSlider,{
+      start:[D.summary.min_year,D.summary.max_year],
+      connect:true, step:1,
+      range:{min:D.summary.min_year,max:D.summary.max_year},
+      format:{to:v=>Math.round(v),from:v=>Number(v)}
+    });
+    yearSlider.noUiSlider.on("update",vals=>{
+      startYearLabel.textContent=Math.round(Number(vals[0]));
+      endYearLabel.textContent=Math.round(Number(vals[1]));
+      render();
+    });
+
+    const coords=D.h.filter(h=>h[4]!==null&&h[5]!==null).map(h=>[h[4],h[5]]);
+    if(coords.length) map.fitBounds(L.latLngBounds(coords).pad(.02));
+  } catch(err) {
+    console.error(err);
+    document.getElementById("loadError").style.display="block";
+  }
+}
+
+hostGroup.addEventListener("change",render);
+hostCollection.addEventListener("change",render);
+parasiteGenus.addEventListener("change",()=>{rebuildParasiteSpecies();render();});
+parasiteSpecies.addEventListener("change",render);
+hostTaxon.addEventListener("input",render);
+search.addEventListener("input",render);
+includeUnknownYear.addEventListener("change",render);
+
+document.getElementById("reset").addEventListener("click",()=>{
+  hostGroup.value=""; hostCollection.value=""; parasiteGenus.value="";
+  rebuildParasiteSpecies(); parasiteSpecies.value=""; hostTaxon.value=""; search.value="";
+  includeUnknownYear.checked=false;
+  yearSlider.noUiSlider.set([D.summary.min_year,D.summary.max_year]);
+  render();
+});
+
+init();
+</script>
+</body>
+</html>
