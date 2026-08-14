@@ -334,7 +334,7 @@ function hostPopup(hid) {
       <b>Parasite taxa:</b> ${counts.size.toLocaleString()}
     </div>
 
-    ${top.length ? `<div class="popup-section"><b>Most frequent parasite identifications</b><br>${top.map(([n,c])=>`<div><i>${esc(n)}</i> <span class="small">(${c})</span></div>`).join("")}</div>` : ""}
+    ${top.length ? `<div class="popup-section"><b>Parasite Counts</b><br>${top.map(([n,c])=>`<div><i>${esc(n)}</i> <span class="small">(${c})</span></div>`).join("")}</div>` : ""}
 
     <div class="popup-section"><b>Linked parasite records</b></div>
     ${linked || '<div class="small">No linked parasite records.</div>'}
