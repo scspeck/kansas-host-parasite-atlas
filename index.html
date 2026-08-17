@@ -110,7 +110,23 @@ a { color:#245d8c; }
 
   <button id="reset">Reset filters</button>
   <div id="resultNote" class="small" style="margin-top:8px;"></div>
-
+  <button class="button"
+          id="download"
+          style="
+                background-color: rgb(237, 237, 237);
+                color: black;
+                font-size: 14px;
+                border: none;
+                border-radius: 10px;
+                width: 100%;
+                margin-top: 10px;
+                padding: 9px;
+                cursor: pointer;"
+    >
+       Download Filtered Data
+  </button>
+  <div id="resultNote" class="small" style="margin-top:8px;"></div>
+    </button>
   <div class="legend">
     <div><span class="dot" style="background:var(--host)"></span>Host record</div>
     <p class="small">
@@ -375,7 +391,324 @@ function render() {
   document.getElementById("resultNote").textContent=
     `${count.toLocaleString()} mapped hosts match the current filters.`;
 }
+// ============================================================
+// DOWNLOAD FILTERED DATA
+// ============================================================
 
+function downloadFilteredData() {
+
+  const rows = [];
+
+  const [minY, maxY] = yearBounds();
+
+  for (let hid = 0; hid < D.h.length; hid++) {
+
+    // Only include hosts that pass the current map filters
+    if (!hostPasses(hid)) continue;
+
+    const h = host(hid);
+
+    const rels = hostRelationships[hid] || [];
+
+    // Find parasite records that match the currently selected
+    // year and parasite taxonomy filters.
+    const matchingRels = rels.filter(ri => {
+
+      const r = D.r[ri];
+
+      const p = parasite(r[0]);
+
+      const year = r[2];
+
+
+      // -----------------------------
+      // YEAR
+      // -----------------------------
+
+      if (year === -1) {
+
+        if (!includeUnknownYear.checked) {
+          return false;
+        }
+
+      } else {
+
+        if (
+          year < minY ||
+          year > maxY
+        ) {
+          return false;
+        }
+
+      }
+
+
+      // -----------------------------
+      // PARASITE TAXONOMY
+      // -----------------------------
+
+      if (
+        parasiteKingdom.value &&
+        p.kingdom !== parasiteKingdom.value
+      ) return false;
+
+
+      if (
+        parasitePhylum.value &&
+        p.phylum !== parasitePhylum.value
+      ) return false;
+
+
+      if (
+        parasiteClass.value &&
+        p.pclass !== parasiteClass.value
+      ) return false;
+
+
+      if (
+        parasiteOrder.value &&
+        p.order !== parasiteOrder.value
+      ) return false;
+
+
+      if (
+        parasiteFamily.value &&
+        p.family !== parasiteFamily.value
+      ) return false;
+
+
+      if (
+        parasiteGenus.value &&
+        p.genus !== parasiteGenus.value
+      ) return false;
+
+
+      if (
+        parasiteSpecies.value &&
+        p.species !== parasiteSpecies.value
+      ) return false;
+
+
+      return true;
+
+    });
+
+
+    // One CSV row per host-parasite relationship
+    for (const ri of matchingRels) {
+
+      const r = D.r[ri];
+
+      const p = parasite(r[0]);
+
+
+      rows.push({
+
+        host_guid:
+          h.guid,
+
+        host_taxon:
+          h.taxon,
+
+        host_collection:
+          h.collection,
+
+        host_group:
+          h.group,
+
+        host_latitude:
+          h.lat,
+
+        host_longitude:
+          h.lon,
+
+        parasite_guid:
+          p.guid,
+
+        parasite_name:
+          p.name,
+
+        parasite_kingdom:
+          p.kingdom,
+
+        parasite_phylum:
+          p.phylum,
+
+        parasite_class:
+          p.pclass,
+
+        parasite_order:
+          p.order,
+
+        parasite_family:
+          p.family,
+
+        parasite_genus:
+          p.genus,
+
+        parasite_species:
+          p.species,
+
+        collection_year:
+          r[2] === -1
+            ? ""
+            : r[2],
+
+        location_in_host:
+          s(r[5]),
+
+        parasite_life_stage:
+          s(r[6]),
+
+        parasite_sex:
+          s(r[7]),
+
+        individual_count:
+          s(r[8])
+
+      });
+
+    }
+
+  }
+
+
+  // If no rows remain after filtering, do not create an empty CSV.
+  if (rows.length === 0) {
+
+    alert(
+      "No records match the current filters."
+    );
+
+    return;
+  }
+
+
+  // -----------------------------
+  // CREATE CSV HEADER
+  // -----------------------------
+
+  const headers =
+    Object.keys(rows[0]);
+
+
+  const csvLines = [];
+
+  csvLines.push(
+    headers.join(",")
+  );
+
+
+  // -----------------------------
+  // CREATE CSV ROWS
+  // -----------------------------
+
+  for (const row of rows) {
+
+    const line =
+      headers.map(header => {
+
+        let value =
+          row[header];
+
+
+        if (
+          value === null ||
+          value === undefined
+        ) {
+
+          value = "";
+
+        }
+
+
+        value =
+          String(value);
+
+
+        // CSV escapes quotation marks
+        // by doubling them.
+        value =
+          value.replace(
+            /"/g,
+            '""'
+          );
+
+
+        // Quote every CSV cell.
+        return `"${value}"`;
+
+      }).join(",");
+
+
+    csvLines.push(
+      line
+    );
+
+  }
+
+
+  const csv =
+    csvLines.join("\\n");
+
+
+  // -----------------------------
+  // CREATE DOWNLOAD
+  // -----------------------------
+
+  const blob =
+    new Blob(
+      [csv],
+      {
+        type:
+          "text/csv;charset=utf-8;"
+      }
+    );
+
+
+  const url =
+    URL.createObjectURL(
+      blob
+    );
+
+
+  const link =
+    document.createElement(
+      "a"
+    );
+
+
+  link.href =
+    url;
+
+
+  link.download =
+    "host_parasite_filtered_data.csv";
+
+
+  document.body.appendChild(
+    link
+  );
+
+
+  link.click();
+
+
+  document.body.removeChild(
+    link
+  );
+
+
+  URL.revokeObjectURL(
+    url
+  );
+
+}
+
+
+// ============================================================
+// INITIAL APPLICATION LOAD
+// ============================================================
 async function init() {
   try {
     const resp=await fetch("data/atlas.json");
@@ -483,7 +816,19 @@ document.getElementById("reset").addEventListener("click",()=>{
   yearSlider.noUiSlider.set([D.summary.min_year,D.summary.max_year]);
   render();
 });
+// ============================================================
+// DOWNLOAD BUTTON
+// ============================================================
 
+document
+  .getElementById("download")
+  .addEventListener(
+    "click",
+    downloadFilteredData
+  );
+// ============================================================
+// START APPLICATION
+// ============================================================  
 init();
 </script>
 </body>
