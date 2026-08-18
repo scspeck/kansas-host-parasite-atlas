@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software or its derived atlas dataset, please cite the archived release and the associated publication when available."
-title: "Kansas Host–Parasite Atlas"
+title: "Kansas State Biorepository Host-Parasite Atlas"
 type: software
 authors:
   - family-names: "Speck"
