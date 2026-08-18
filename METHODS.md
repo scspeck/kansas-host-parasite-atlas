@@ -2,17 +2,17 @@
 
 ## Overview
 
-The Kansas Host–Parasite Atlas uses a host-centered relational model to visualize museum-vouchered host–parasite associations. The web application is static and browser-based; preprocessing is performed before deployment so the client does not need to query the source collection database for every interaction.
+The Kansas State Biorepository Host-Parasite Atlas uses a host-centered relational model to visualize museum-vouchered host–parasite associations. The web application is static and browser-based; preprocessing is performed before deployment so the client does not need to query the source collection database for every interaction.
 
 ## Source records
 
 The development workflow begins with an Arctos export of parasite specimen records containing specimen GUIDs, taxonomic fields, collection dates, coordinates, related-cataloged-item relationships, and selected specimen attributes. The processing script identifies relationships explicitly labeled `parasite of` and uses the related GUID as the host identifier.
 
-For a publication release, document here the exact Arctos query, export date, collections included, record count, fields requested, and any exclusion criteria.
+For a publication release, document here what my exact Arctos query, export date, collections included, record count, fields requested, and any other exclusion criteria I use.
 
 ## Host–parasite relationships
 
-A host–parasite association is retained when a parasite record contains an Arctos related-cataloged-item relationship identified as `parasite of`. Host and parasite GUIDs are preserved as persistent record identifiers in the derived atlas dataset.
+A host-parasite association is retained when a parasite record contains an Arctos related-cataloged-item relationship identified as `parasite of`. Host and parasite GUIDs are preserved as persistent record identifiers in the derived atlas dataset.
 
 ## Taxonomy
 
