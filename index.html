@@ -1,7 +1,7 @@
 <!--
 ======================================================================
-HOST–PARASITE RELATIONAL ATLAS
-HOST-CENTERED TAXONOMY PRACTICE VERSION
+KANSAS HOST–PARASITE ATLAS
+SCHOLARLY WEB APPLICATION
 ======================================================================
 
 PURPOSE
@@ -62,7 +62,7 @@ JavaScript decoder functions must be updated.
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Host–Parasite Relational Atlas — Host-Centered Taxonomy Practice</title>
+<title>Kansas Host–Parasite Atlas</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
@@ -101,6 +101,8 @@ button { padding:8px 10px; border:0; border-radius:6px; cursor:pointer; }
 .checks label { display:block; margin:6px 0; font-size:.83rem; }
 .small { color:var(--muted); font-size:.75rem; line-height:1.45; }
 .legend { margin-top:17px; padding-top:12px; border-top:1px solid var(--border); font-size:.82rem; }
+details summary { cursor:pointer; }
+  code { font-size:.72rem; }
 .dot { width:11px; height:11px; display:inline-block; border-radius:50%; margin-right:6px; vertical-align:-1px; }
 .popup-title { font-size:1rem; }
 .popup-guid { font-family:monospace; color:#59656d; font-size:.77rem; }
@@ -127,18 +129,18 @@ Parasite taxonomy filters retain hosts that have at least one
 linked parasite matching the selected taxonomy.
 -->
 <aside>
-  <h1>Host–Parasite Relational Atlas</h1>
+  <h1>Kansas Host–Parasite Atlas</h1>
   <div class="subtitle">
-    Host-centered practice version with cascading parasite taxonomy filters from kingdom through species. Each map point represents one host GUID, with all linked parasite records listed in the popup.
+    An interactive, specimen-based resource for exploring host–parasite associations represented in natural history collections. Each mapped point represents a host record; linked parasite records can be explored by taxonomy, collection year, and specimen identifiers.
   </div>
 
   <div id="loadError">The data file could not be loaded. Use GitHub Pages or a local web server.</div>
 
   <div class="stats">
-    <div class="stat"><strong>51,316</strong><span>parasite records</span></div>
-    <div class="stat"><strong>30,849</strong><span>unique hosts</span></div>
-    <div class="stat"><strong>51,790</strong><span>host–parasite links</span></div>
-    <div class="stat"><strong id="statHostSpecies">—</strong><span>unique host species</span></div>
+    <div class="stat"><strong id="statParasites">—</strong><span>parasite records</span></div>
+    <div class="stat"><strong id="statHosts">—</strong><span>host records</span></div>
+    <div class="stat"><strong id="statLinks">—</strong><span>host–parasite associations</span></div>
+    <div class="stat"><strong id="statHostSpecies">—</strong><span>unique host taxa</span></div>
   </div>
 <label class="section">Collection year</label>
   <div class="year-values"><span id="startYearLabel">—</span><span id="endYearLabel">—</span></div>
@@ -204,9 +206,40 @@ linked parasite matching the selected taxonomy.
   <div class="legend">
     <div><span class="dot" style="background:var(--host)"></span>Host record</div>
     <p class="small">
-      Each point is one host GUID. Parasite filters keep only hosts containing matching parasite records. Host coordinates are inferred from linked parasite records in this practice dataset.
+      Each point represents one host record. Parasite filters retain hosts with at least one linked parasite record matching the selected criteria. Absence of a record from the atlas should not be interpreted as biological absence.
     </p>
   </div>
+
+  <details class="legend">
+    <summary><strong>About this atlas</strong></summary>
+    <p class="small">
+      The Kansas Host–Parasite Atlas is a specimen-based discovery and visualization tool for exploring associations between museum-vouchered hosts and independently cataloged parasite records. Host and parasite records remain linked to their source specimen identifiers so users can return to the authoritative collection record.
+    </p>
+  </details>
+
+  <details class="legend">
+    <summary><strong>Data interpretation &amp; limitations</strong></summary>
+    <p class="small">
+      Museum records reflect collecting effort, geographic and temporal sampling, digitization, and taxonomic identification. Record density is not a direct measure of abundance, prevalence, or sampling effort, and absence of records is not evidence of biological absence. Taxonomy and specimen metadata may be revised in the source collection after an atlas release is generated.
+    </p>
+    <p class="small">
+      <strong>Development-data note:</strong> the current demonstration dataset was generated from parasite records; host coordinates are inferred from coordinates associated with linked parasite records. A publication release should use authoritative host-record coordinates or explicitly retain this limitation in the accompanying methods.
+    </p>
+  </details>
+
+  <details class="legend">
+    <summary><strong>Data download</strong></summary>
+    <p class="small">
+      “Download Filtered Data” exports the host–parasite associations matching the active filters. Each CSV row represents one host–parasite association. The export is intended for discovery and reproducible filtering; users should consult the linked source specimen records before analyses requiring current identifications, georeferencing uncertainty, or complete collection metadata.
+    </p>
+  </details>
+
+  <div class="legend small">
+    <strong>Release:</strong> development build, 2026-08-18<br>
+    <strong>Repository:</strong> KSBiorepository/KSBiorepository_Host_Parasite_Atlas<br>
+    <strong>Recommended citation:</strong> see <code>CITATION.cff</code> in the repository.
+  </div>
+
 </aside>
 
 <!-- Leaflet inserts the interactive map into this element. -->
@@ -759,7 +792,7 @@ function downloadFilteredData() {
   const link = document.createElement("a");
 
   link.href = url;
-  link.download = "host_parasite_filtered_data.csv";
+  link.download = "kansas_host_parasite_atlas_filtered_associations.csv";
 
   document.body.appendChild(link);
   link.click();
@@ -785,6 +818,15 @@ async function init() {
 
     document.getElementById("statHostSpecies").textContent =
       uniqueHostSpecies.size.toLocaleString();
+
+    // Populate dataset summary cards from the loaded release rather than
+    // hard-coding counts into the webpage.
+    document.getElementById("statParasites").textContent =
+      D.m.length.toLocaleString();
+    document.getElementById("statHosts").textContent =
+      D.h.length.toLocaleString();
+    document.getElementById("statLinks").textContent =
+      D.r.length.toLocaleString();
 
     rebuildFilters();
 

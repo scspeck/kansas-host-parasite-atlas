@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software or its derived atlas dataset, please cite the archived release and the associated publication when available."
+title: "Kansas Host–Parasite Atlas"
+type: software
+authors:
+  - family-names: "Speck"
+    given-names: "Samuel"
+year: 2026
+version: "0.9.0-development"
+repository-code: "https://github.com/KSBiorepository/KSBiorepository_Host_Parasite_Atlas"
+license: MIT
+keywords:
+  - natural history collections
+  - host-parasite associations
+  - biodiversity informatics
+  - museum specimens
+  - parasitology
+  - Arctos
+# Before the publication release, add:
+# doi: "10.xxxx/xxxxx"
+# url: "https://..."
+# preferred-citation:
+#   type: article
+#   authors: [...]
+#   title: "..."
+#   journal: "..."
+#   year: 20XX
+#   doi: "10.xxxx/xxxxx"

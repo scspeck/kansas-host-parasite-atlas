@@ -1,89 +1,133 @@
-# Host–Parasite Relational Atlas - Host-Centered GitHub Version
+# Kansas Host–Parasite Atlas
 
-This practice atlas uses a compact relational JSON architecture designed to fit comfortably within GitHub's browser-upload limits.
+The **Kansas Host–Parasite Atlas** is an interactive, specimen-based web resource for exploring associations between museum-vouchered hosts and independently cataloged parasite records. The atlas is designed as a discovery, visualization, and reproducible filtering interface while preserving links to the underlying natural history collection records.
 
-## Size reduction
+> **Release status:** Development build. The current demonstration dataset is suitable for testing the atlas architecture, but the coordinate workflow described under **Known limitations** should be resolved or explicitly retained in the methods before a formal data release is cited in a publication.
 
-The earlier practice version used roughly 45 MB of GeoJSON. This version stores the same core relational information in:
+## Scientific purpose
 
-- `data/atlas.json` — about 6.3 MB
-- `data/summary.json` — tiny summary file
+Natural history collections preserve information about organisms across geography and time, but host and parasite records are often cataloged as separate objects. This atlas provides a host-centered interface for exploring those relational data. It is intended to support specimen discovery, visualization of geographic and temporal patterns, exploration of host–parasite associations, and reproducible selection of records for subsequent research.
 
-The reduction comes from:
+The atlas is **not** an estimator of host abundance, parasite prevalence, parasite intensity, or biological absence unless the underlying sampling design independently supports those inferences.
 
-- storing repeated strings once in a string dictionary,
-- using integer IDs for hosts and parasites,
-- storing coordinates once as numeric arrays,
-- generating Arctos URLs in the browser rather than storing them repeatedly,
-- avoiding verbose GeoJSON property names on every record.
+## How to interpret the map
 
-## Current dataset
+Each map point represents **one host record**. Parasite records are linked to hosts through cataloged specimen relationships. Selecting a parasite taxon therefore retains hosts having at least one linked parasite record that satisfies the active filters; parasite records are not plotted as independent occurrence points in this host-centered view.
 
-- 51,316 parasite records
-- 30,849 unique host GUIDs
-- 51,790 parasite-to-host relationships
-- 40,733 mapped relationships
-- 24,379 mapped hosts
+Parasite taxonomy can be filtered hierarchically from kingdom through species. Additional controls allow filtering by host group, host collection, host taxon, collection year, and GUID/taxon text.
 
-## GitHub Pages
+## Data provenance
 
-Upload the contents of this folder to a repository:
+The atlas is built from specimen metadata exported from **Arctos**. Arctos and the contributing natural history collections remain the authoritative sources for specimen information. The atlas is a derived visualization and discovery product and does not replace the corresponding source records.
 
-    index.html
-    README.md
-    data/
-      atlas.json
-      summary.json
-    scripts/
-      process_compact_atlas.py
+Every downloadable association retains host and parasite GUIDs so that records can be traced back to their source specimen records.
 
-Every individual file is comfortably under GitHub's 25 MiB browser-upload limit.
+## Processing workflow
 
-Then enable:
+The reproducible workflow is:
 
-Settings → Pages → Deploy from a branch → main → / (root)
+```text
+Arctos specimen export
+        |
+        v
+scripts/process_compact_atlas.py
+        |
+        v
+data/atlas.json + data/summary.json
+        |
+        v
+index.html
+        |
+        v
+interactive host-centered atlas
+```
 
-## Compact data structure
+`process_compact_atlas.py` parses host–parasite relationships, extracts parasite taxonomy and selected specimen attributes, consolidates linked records by host GUID, and writes a compact relational JSON representation for the browser.
 
-`atlas.json` contains:
+### Compact data architecture
 
-- `s` — unique strings
-- `m` — parasite metadata
-- `h` — host metadata
-- `r` — parasite↔host relationship/map rows
+`data/atlas.json` contains four principal arrays:
 
-The website reconstructs display labels from those integer references in the browser.
+- `s` — shared string dictionary;
+- `m` — parasite metadata;
+- `h` — host metadata; and
+- `r` — host–parasite relationship records.
 
-## Future scaling
+Repeated text is stored once in `s` and referenced by integer identifier. This substantially reduces file size relative to a verbose GeoJSON representation while preserving the relational structure required by the atlas.
 
-This architecture is appropriate for tens of thousands of records on GitHub Pages.
-When the atlas reaches hundreds of thousands or millions of relationships, the next step should be a database/API rather than continually enlarging `atlas.json`.
+## Filtered data download
 
+The **Download Filtered Data** button exports the host–parasite associations satisfying the active filters. Each CSV row represents one host–parasite association. Parasites linked to a visible host but failing the active parasite taxonomy or year filters are excluded from the download.
 
-## Host-centered map change
+The downloaded table is intended for transparent record selection and downstream analysis. Researchers should consult the linked source records before analyses requiring current identifications, complete locality metadata, coordinate uncertainty, restrictions, or other fields not represented in the atlas export.
 
-The map now displays only one point per host GUID.
+See [`DATA_DICTIONARY.md`](DATA_DICTIONARY.md) for field definitions.
 
-Parasite records are not shown as separate map points. Instead:
+## Known limitations
 
-- each host popup lists linked parasite GUIDs,
-- parasite genus/species filters show only hosts containing matching parasite records,
-- the year slider filters hosts based on linked parasite records within the selected year range,
-- searches can still match host GUIDs, host taxa, parasite GUIDs, or parasite taxa.
+Museum data are shaped by collecting effort, sampling design, geography, time, digitization history, taxonomic practice, and collection-specific workflows. Consequently:
 
-This is simpler for interpretation and reduces geographic clutter while preserving the host–parasite relationship structure.
+- record density should not be interpreted directly as organismal abundance;
+- parasite-record frequency should not be interpreted directly as prevalence or intensity;
+- absence of a record should not be interpreted as biological absence;
+- taxonomic identifications may change after an atlas release is generated; and
+- source records may be corrected or augmented after the atlas snapshot is created.
 
+### Coordinate limitation in the current development dataset
 
-## Higher parasite taxonomy
+The current development dataset was generated from a parasite-record export rather than a separate authoritative host-record export. Host map coordinates are therefore inferred from coordinates associated with parasite records linked to each host. This is appropriate for testing the relational architecture but should not be silently treated as authoritative host georeferencing.
 
-This version adds cascading filters for:
+Before a formal publication release, the preferred workflow is to obtain host coordinates directly from the authoritative host records. If the inferred-coordinate approach is retained, it should be described explicitly in the manuscript methods and data documentation.
 
-- Kingdom
-- Phylum
-- Class
-- Order
-- Family
-- Genus
-- Species
+## Reproducibility and versioning
 
-Selecting a higher rank restricts the available choices at all lower ranks. The map remains host-centered: a host is shown only if at least one linked parasite record matches the full selected taxonomy and year filters.
+A publication-associated release should be frozen and versioned rather than allowing the paper to point only to a continuously changing website. Recommended release procedure:
+
+1. generate the final dataset from a documented Arctos export;
+2. record the export/retrieval date and query criteria;
+3. update `CHANGELOG.md` and the release identifier;
+4. create a tagged repository release (for example, `v1.0.0`);
+5. archive that release in a DOI-issuing repository such as Zenodo; and
+6. cite the archived release in the manuscript.
+
+The live atlas may continue to receive updates after publication, while the archived release preserves the exact software and data snapshot used in the paper.
+
+## Repository structure
+
+```text
+.
+├── index.html
+├── README.md
+├── DATA_DICTIONARY.md
+├── METHODS.md
+├── DATA_USE.md
+├── CITATION.cff
+├── CHANGELOG.md
+├── LICENSE
+├── data/
+│   ├── atlas.json
+│   └── summary.json
+└── scripts/
+    └── process_compact_atlas.py
+```
+
+## Software
+
+The web application uses Leaflet, Leaflet.markercluster, and noUiSlider. Data preprocessing is performed in Python with pandas. The application is designed for static hosting, including GitHub Pages.
+
+## Citation
+
+A machine-readable citation template is provided in `CITATION.cff`. Replace the placeholder publication metadata and DOI when the atlas software/data paper and archived release are available.
+
+When using specimen information, researchers should also cite or acknowledge the contributing collections and source records as appropriate for their analysis.
+
+## Data and software licensing
+
+The source code in this repository is released under the MIT License. This software license does **not** relicense specimen data obtained from Arctos or contributing collections. See `DATA_USE.md` for data-use guidance.
+
+## Contact
+
+Kansas State University Biorepository  
+Kansas State University
+
+For project-specific contact information, add the corresponding author and institutional email before the public release.
