@@ -1,112 +1,83 @@
-# Kansas State Biorepository Host-Parasite Atlas
+# Mammal–Parasite Tracker — v1 Architecture Prototype
 
-The **Kansas State Biorepository Host-Parasite Atlas** is an interactive, specimen-based web resource for exploring the associations between museum-vouchered hosts and independently cataloged parasite records. The atlas is designed as a discovery, visualization, and reproducible filtering interface while preserving links to the underlying natural history collection records.
+This version changes the project from a single-source atlas into a **collection-agnostic mammal–parasite discovery framework**.
 
-## Scientific purpose
+## Core model
 
-Natural history collections preserve information about organisms across geography and time, but host and parasite records are often cataloged as separate objects. This atlas provides a host-centered interface for exploring those relational data. It is intended to support specimen discovery, visualization of geographic and temporal patterns, exploration of host-parasite associations, and reproducible selection of records for subsequent research.
+All inputs are normalized into three entities:
 
-The atlas is **not** an estimator of host abundance, parasite prevalence, parasite intensity, or biological absence unless the underlying sampling design independently supports those inferences.
+- **Hosts**
+- **Parasites**
+- **Associations**
 
-## How to interpret the map
+The interface then provides two views of exactly the same association data:
 
-Each map point represents **one host record**. Parasite records are linked to hosts through cataloged specimen relationships. Selecting a parasite taxon therefore retains that hosts have at least one linked parasite record that satisfies the active filters; parasite records are not plotted as independent occurrence points.
+- **Host Mode:** one mapped host with all matching parasites.
+- **Parasite Mode:** one mapped parasite entity with its matching mammal host(s).
 
-Parasite taxonomy can be filtered hierarchically from kingdom through species. Additional controls allow filtering by host group, host collection, host taxon, collection year, and GUID/taxon text.
+See `docs/CANONICAL_SCHEMA.md`.
 
-## Data provenance
+## Sources included in this prototype
 
-The atlas is built from specimen metadata exported from **Arctos**. Arctos and the contributing natural history collections remain the authoritative sources for specimen information. The atlas is a derived visualization and discovery product and does not replace the corresponding source records.
+### MSB:Para adapter
 
-Every downloadable association retains host and parasite GUIDs so that records can be traced back to their source specimen records.
+Processes independently cataloged Arctos parasite records linked to hosts through explicit `parasite of` relationships.
 
-## Processing workflow
+- Hosts: 30,906
+- Parasite records: 51,376
+- Associations: 51,864
+- Unresolved non-GUID host relationships: 129
 
-The reproducible workflow is:
+Evidence type: `cataloged_parasite_specimen`.
 
-```text
-Arctos specimen export
-        |
-        v
-scripts/process_compact_atlas.py
-        |
-        v
-data/atlas.json + data/summary.json
-        |
-        v
-index.html
-        |
-        v
-interactive host-centered atlas
-```
+### KSB:Mamm host-part adapter
 
-`process_compact_atlas.py` parses host-parasite relationships, extracts parasite taxonomy and selected specimen attributes, consolidates linked records by host GUID, and writes a compact relational JSON representation for the browser.
+Processes the earlier KSB prototype in which parasites remain parts of the host specimen. The adapter converts each documented parasite part/parsed parasite type into a searchable parasite entity linked to its mammal host while retaining evidence provenance.
 
-### Compact data architecture
+- Hosts: 131
+- Parasite entities: 151
+- Associations: 151
 
-`data/atlas.json` contains four principal arrays:
+Evidence type: `host_part`.
 
-- `s` — shared string dictionary;
-- `m` — parasite metadata;
-- `h` — host metadata; and
-- `r` — host–parasite relationship records.
+## Combined prototype
 
-Repeated text is stored once in `s` and referenced by integer identifier. This substantially reduces file size relative to a GeoJSON representation while preserving the relational structure required by the atlas.
+- Hosts: 31,037
+- Parasite entities: 51,527
+- Associations: 52,015
 
-## Filtered data download
+`data/tracker.json` is the compact browser dataset (~11.8 MB).  
+`data/canonical.json.gz` is a compressed verbose representation for development/reference.
 
-The **Download Filtered Data** button exports the host-parasite associations satisfying any active filters. Each CSV row represents one host–parasite association. Parasites linked to a visible host but failing the active parasite taxonomy or year filters are excluded from the download.
+## Generic CSV support
 
-The downloaded table is intended for transparent record selection and further downstream analysis. Researchers should consult the linked source records before analyses requiring current identifications, complete locality metadata, coordinate uncertainty, restrictions, or other fields which are not represented in the atlas export.
+`adapters/generic_csv.py` converts a collection-specific CSV using a JSON column mapping such as `examples/generic_mapping.json`.
 
-See [`DATA_DICTIONARY.md`](DATA_DICTIONARY.md) for field definitions.
+`import.html` is an early browser-side column-mapping shell. It currently validates and previews mappings locally; the next step is to have it generate canonical entities and launch the map without any server upload.
 
-## Known limitations
+## Why adapters matter
 
-Museum data are shaped by collecting effort, sampling design, geography, time, digitization history, taxonomic practice, and collection-specific workflows. Consequently:
-
-- record density should not be interpreted directly as organismal abundance;
-- parasite-record frequency should not be interpreted directly as prevalence or intensity;
-- absence of a record should not be interpreted as biological absence;
-- taxonomic identifications may change after an atlas release is generated; and
-- source records may be corrected or augmented after the atlas snapshot is created.
-
-## Repository structure
+Collections do not have to organize parasites identically.
 
 ```text
-.
-├── index.html
-├── README.md
-├── DATA_DICTIONARY.md
-├── METHODS.md
-├── DATA_USE.md
-├── CITATION.cff
-├── CHANGELOG.md
-├── LICENSE
-├── data/
-│   ├── atlas.json
-│   └── summary.json
-└── scripts/
-    └── process_compact_atlas.py
+MSB:Para                        KSB:Mamm
+separate parasite GUID          parasite retained as host part
+        │                                │
+        └──────── adapters ──────────────┘
+                         │
+                         v
+             Host / Parasite / Association
+                         │
+                 ┌───────┴───────┐
+                 v               v
+              Host Mode      Parasite Mode
+                         │
+                         v
+                 combined download
 ```
 
-## Software
+Future adapters can target Arctos authoritative host records, ALA/GBIF occurrence services, other museum exports, or user-supplied CSV files.
 
-The web application uses Leaflet, Leaflet.markercluster, and noUiSlider. Data preprocessing is performed in Python with pandas. The application is designed for static hosting, including GitHub Pages.
+## Current deployment
 
-## Citation
-
-A machine-readable citation template is provided in `CITATION.cff`. I need to replace the placeholder publication metadata and DOI when the atlas software/data paper and archived release are available.
-
-When using specimen information, researchers should also cite or acknowledge the contributing collections and source records as appropriate for their analysis.
-
-## Data and software licensing
-
-The source code in this repository is released under the MIT License. This software license does **not** relicense specimen data obtained from Arctos or contributing collections. See `DATA_USE.md` for data-use guidance.
-
-## Contact
-
-Kansas State University Biorepository  
-Kansas State University
-
-For project-specific contact information, I should add the corresponding author and institutional email before the public release.
+The prototype remains static and GitHub-Pages compatible. That is intentional for development. A future multi-user service with remote APIs and persistent uploads will likely move to a backend architecture such as FastAPI + PostgreSQL/PostGIS while retaining this canonical model as the API contract.

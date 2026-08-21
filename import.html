@@ -1,0 +1,15 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Mammal–Parasite Tracker CSV Import Prototype</title>
+<style>body{font-family:Arial;max-width:900px;margin:30px auto;padding:0 20px}select,input,button{padding:7px;margin:4px}table{border-collapse:collapse;width:100%;font-size:.8rem}td,th{border:1px solid #ddd;padding:5px}.grid{display:grid;grid-template-columns:220px 1fr;gap:4px}</style></head><body>
+<h1>CSV Import Prototype</h1>
+<p>This page demonstrates the planned collection-agnostic import workflow. Your CSV remains in your browser; it is not uploaded to a server.</p>
+<input id="file" type="file" accept=".csv"><div id="mapping" class="grid"></div><button id="preview" disabled>Validate & Preview Mapping</button>
+<p id="status"></p><div style="overflow:auto"><table id="table"></table></div>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script><script>
+let rows=[],cols=[];const fields=[
+["host_id","Host identifier"],["host_scientific_name","Host scientific name"],["host_sex","Host sex"],["host_age","Host age"],
+["parasite_id","Parasite identifier"],["parasite_scientific_name","Parasite scientific name"],["parasite_family","Parasite family"],
+["date","Collection/association date"],["country","Country"],["state_province","State / Province"],["locality","Locality"],["latitude","Latitude"],["longitude","Longitude"],["individual_count","Parasite count"]
+];
+document.getElementById("file").onchange=e=>Papa.parse(e.target.files[0],{header:true,skipEmptyLines:true,complete:r=>{rows=r.data;cols=r.meta.fields||[];const box=document.getElementById("mapping");box.innerHTML="";fields.forEach(([key,label])=>{const l=document.createElement("label");l.textContent=label;const s=document.createElement("select");s.id="m_"+key;s.innerHTML='<option value="">Not mapped</option>'+cols.map(c=>`<option>${c}</option>`).join("");box.append(l,s)});document.getElementById("preview").disabled=false;document.getElementById("status").textContent=`${rows.length.toLocaleString()} rows loaded locally.`}});
+document.getElementById("preview").onclick=()=>{const map={};fields.forEach(([k])=>map[k]=document.getElementById("m_"+k).value);const required=["host_scientific_name","parasite_scientific_name","latitude","longitude"];const missing=required.filter(k=>!map[k]);if(missing.length){document.getElementById("status").textContent="Recommended fields still unmapped: "+missing.join(", ");return}const keys=Object.keys(map).filter(k=>map[k]);const t=document.getElementById("table");t.innerHTML="<tr>"+keys.map(k=>`<th>${k}</th>`).join("")+"</tr>"+rows.slice(0,20).map(r=>"<tr>"+keys.map(k=>`<td>${r[map[k]]??""}</td>`).join("")+"</tr>").join("");document.getElementById("status").textContent="Mapping validated for preview. Next development step: convert this mapping into the canonical Host / Parasite / Association model and pass it to the map."};
+</script></body></html>

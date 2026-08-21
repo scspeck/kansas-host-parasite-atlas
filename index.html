@@ -1,959 +1,248 @@
-<!--
-======================================================================
-KANSAS STATE BIOREPOSITORY HOST-PARASITE ATLAS
-SCHOLARLY WEB APPLICATION
-======================================================================
-
-PURPOSE
--------
-Interactive Leaflet map for exploring relationships between Arctos host
-specimen records and independently cataloged parasite records.
-
-MAP UNIT
---------
-Each map point represents ONE HOST RECORD.
-
-Parasite records are not displayed as separate points. Instead, all
-parasite records linked to a host through the Arctos "parasite of"
-relationship are associated with that host point.
-
-DATA SOURCE
------------
-The webpage loads:
-
-    data/atlas.json
-
-That file is generated from an Arctos parasite CSV export by:
-
-    scripts/process_compact_atlas.py
-
-COMPACT DATA MODEL
-------------------
-atlas.json contains:
-
-    s = shared string dictionary
-    m = parasite metadata
-    h = host metadata
-    r = parasite-to-host relationships
-
-Repeated strings are stored once and referenced by integer ID. This is
-why the compact atlas is much smaller than a verbose GeoJSON version.
-
-IMPORTANT PRACTICE-DATA LIMITATION
-----------------------------------
-This practice project was built from a parasite export rather than an
-authoritative host export. Host coordinates are therefore inferred from
-coordinates associated with linked parasite records.
-
-A production KSB atlas should preferably use host coordinates, dates,
-locality, and taxonomy directly from the authoritative host record.
-
-MAINTENANCE NOTE
-----------------
-The JavaScript decodes compact arrays by position. If the Python
-processor changes the field order in m, h, or r, the corresponding
-JavaScript decoder functions must be updated.
-
-======================================================================
--->
-
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kansas State Biorepository Host-Parasite Atlas</title>
-
+<title>Mammal–Parasite Tracker</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.css">
-
 <style>
-/* ============================================================
-   PAGE STYLING
-   ============================================================ */
-:root {
-  --border:#d9e0e4; --muted:#68737a; --panel:#fff; --bg:#f3f5f6; --text:#1d252c;
-  --parasite:#7b4ca0; --host:#2e7d4f;
-}
-* { box-sizing:border-box; }
-html,body { height:100%; margin:0; font-family:Arial,Helvetica,sans-serif; color:var(--text); background:var(--bg); }
-body { display:grid; grid-template-columns:370px 1fr; }
-aside { padding:20px; background:var(--panel); border-right:1px solid var(--border); overflow:auto; z-index:1001; }
-#map { height:100vh; width:100%; }
-h1 { font-size:1.4rem; margin:0 0 4px; }
-.subtitle { color:var(--muted); font-size:.85rem; line-height:1.45; margin-bottom:15px; }
-.stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0 18px; }
-.stat { border:1px solid var(--border); background:#f7f9fa; border-radius:8px; padding:9px; }
-.stat strong { display:block; font-size:1.15rem; }
-.stat span { color:var(--muted); font-size:.73rem; }
-label.section { display:block; font-weight:700; font-size:.84rem; margin:14px 0 5px; }
-select,input[type=text] { width:100%; padding:8px 9px; border:1px solid #bac4ca; border-radius:6px; background:#fff; }
-button { padding:8px 10px; border:0; border-radius:6px; cursor:pointer; }
-#reset { width:100%; background:#29353d; color:#fff; margin-top:14px; }
-.year-values { display:flex; justify-content:space-between; margin:4px 0 6px; font-weight:700; font-size:.82rem; }
-#yearSlider { margin:14px 10px 18px; }
-.noUi-connect { background:#687680; }
-.noUi-horizontal { height:8px; }
-.noUi-horizontal .noUi-handle { width:20px; height:20px; right:-10px; top:-7px; border-radius:50%; cursor:grab; }
-.noUi-handle::before,.noUi-handle::after { display:none; }
-.checks label { display:block; margin:6px 0; font-size:.83rem; }
-.small { color:var(--muted); font-size:.75rem; line-height:1.45; }
-.legend { margin-top:17px; padding-top:12px; border-top:1px solid var(--border); font-size:.82rem; }
-details summary { cursor:pointer; }
-  code { font-size:.72rem; }
-.dot { width:11px; height:11px; display:inline-block; border-radius:50%; margin-right:6px; vertical-align:-1px; }
-.popup-title { font-size:1rem; }
-.popup-guid { font-family:monospace; color:#59656d; font-size:.77rem; }
-.popup-section { margin-top:9px; }
-.leaflet-popup-content { min-width:270px; max-width:390px; max-height:420px; overflow:auto; }
-a { color:#245d8c; }
-#loadError { display:none; background:#fff2f0; border:1px solid #c86c61; padding:9px; border-radius:6px; font-size:.82rem; margin-bottom:10px; }
-@media(max-width:800px) {
- body { display:block; }
- aside { height:auto; border-right:0; border-bottom:1px solid var(--border); }
- #map { height:72vh; }
-}
+:root{--border:#d9e0e4;--muted:#65717a;--panel:#fff;--bg:#f3f5f6;--text:#1d252c;--host:#2d7650;--para:#77528c}
+*{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:var(--bg)}
+body{display:grid;grid-template-columns:390px 1fr}aside{padding:18px;background:var(--panel);border-right:1px solid var(--border);overflow:auto;z-index:1001}
+#map{height:100vh;width:100%}h1{font-size:1.45rem;margin:0}.subtitle{font-size:.82rem;color:var(--muted);line-height:1.45;margin:5px 0 12px}
+.mode{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}.mode button{background:#fff;color:#222;border:1px solid #abb5bb}
+.mode button.active{background:#27343b;color:#fff}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}
+.stat{padding:8px;border:1px solid var(--border);border-radius:7px;background:#f8fafb}.stat strong{display:block;font-size:1.08rem}.stat span{font-size:.7rem;color:var(--muted)}
+.sectionTitle{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:#56636b;margin:18px 0 4px;border-bottom:1px solid #e3e7e9;padding-bottom:4px}
+label{display:block;font-size:.82rem;font-weight:700;margin:9px 0 3px}select,input{width:100%;padding:7px;border:1px solid #bbc4ca;border-radius:5px;background:#fff}
+button{width:100%;padding:8px;border:0;border-radius:6px;cursor:pointer;margin-top:8px}.reset{background:#29353d;color:#fff}.download{background:#eceff1;color:#111}
+.yearvals{display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;margin:5px 0}.noUi-connect{background:#677680}#yearSlider{margin:16px 10px 20px}
+.noUi-horizontal{height:8px}.noUi-horizontal .noUi-handle{width:20px;height:20px;right:-10px;top:-7px;border-radius:50%}.noUi-handle:before,.noUi-handle:after{display:none}
+.small{font-size:.73rem;color:var(--muted);line-height:1.4}.note{margin-top:13px;padding:8px;border:1px solid var(--border);background:#fafbfb}
+.popup-title{font-size:1rem}.guid{font-family:monospace;font-size:.75rem;color:#5f6970}.psect{margin-top:8px}.leaflet-popup-content{min-width:280px;max-width:400px;max-height:430px;overflow:auto}
+a{color:#235f91}details summary{cursor:pointer}@media(max-width:800px){body{display:block}aside{height:auto;border-right:0;border-bottom:1px solid var(--border)}#map{height:70vh}}
 </style>
 </head>
-
 <body>
-
-<!-- ============================================================
-     SIDEBAR + MAP LAYOUT
-     ============================================================ -->
-<!--
-Sidebar filters modify which HOST points are visible.
-Parasite taxonomy filters retain hosts that have at least one
-linked parasite matching the selected taxonomy.
--->
 <aside>
-  <h1>Kansas State Biorepository Host-Parasite Atlas</h1>
-  <div class="subtitle">
-    An interactive, specimen-based resource for exploring host-parasite associations represented in natural history collections. Each mapped point represents a host record; linked parasite records can be explored by taxonomy, collection year, and specimen identifiers.
-  </div>
+<h1>Mammal–Parasite Tracker</h1>
+<div class="subtitle">A specimen-linked discovery prototype that normalizes separate parasite records and parasites retained as host parts into one Host ↔ Parasite ↔ Association model.</div>
 
-  <div id="loadError">The data file could not be loaded. Use GitHub Pages or a local web server.</div>
+<div class="mode">
+<button id="hostMode" class="active">Host Mode</button>
+<button id="parasiteMode">Parasite Mode</button>
+</div>
 
-  <div class="stats">
-    <div class="stat"><strong id="statParasites">—</strong><span>parasite records</span></div>
-    <div class="stat"><strong id="statHosts">—</strong><span>host records</span></div>
-    <div class="stat"><strong id="statLinks">—</strong><span>host–parasite associations</span></div>
-    <div class="stat"><strong id="statHostSpecies">—</strong><span>unique host taxa</span></div>
-  </div>
-<label class="section">Collection year</label>
-  <div class="year-values"><span id="startYearLabel">—</span><span id="endYearLabel">—</span></div>
-  <div id="yearSlider"></div>
-  <div class="checks">
-    <label><input type="checkbox" id="includeUnknownYear"> Include records without an explicit four-digit year</label>
-  </div>
+<div class="stats">
+<div class="stat"><strong id="hostCount">—</strong><span>hosts</span></div>
+<div class="stat"><strong id="paraCount">—</strong><span>parasite entities</span></div>
+<div class="stat"><strong id="assocCount">—</strong><span>associations</span></div>
+<div class="stat"><strong id="visibleCount">—</strong><span>visible map records</span></div>
+</div>
 
-  <label class="section" for="hostGroup">Host group</label>
-  <select id="hostGroup"><option value="">All host groups</option></select>
+<div class="sectionTitle">Data source & evidence</div>
+<label for="source">Source dataset</label><select id="source"><option value="">All sources</option></select>
+<label for="evidence">Association evidence</label><select id="evidence"><option value="">All evidence types</option></select>
 
-  <label class="section" for="hostCollection">Host collection</label>
-  <select id="hostCollection"><option value="">All host collections</option></select>
+<div class="sectionTitle">Geography</div>
+<label for="country">Country</label><select id="country"><option value="">All countries</option></select>
+<label for="state">State / Province</label><select id="state"><option value="">All states / provinces</option></select>
 
-  <!--
-  CASCADING PARASITE TAXONOMY FILTERS
-  Kingdom -> Phylum -> Class -> Order -> Family -> Genus -> Species.
-  Higher-rank choices restrict the available lower-rank options.
-  -->
-  <label class="section" for="parasiteKingdom">Parasite kingdom</label>
-  <select id="parasiteKingdom"><option value="">All kingdoms</option></select>
+<div class="sectionTitle">Host</div>
+<label for="hostTaxon">Host taxon contains</label><input id="hostTaxon" type="text" placeholder="e.g. Peromyscus">
+<label for="hostSex">Host sex</label><select id="hostSex"><option value="">All sexes</option></select>
+<label for="hostAge">Host age / life stage</label><select id="hostAge"><option value="">All ages</option></select>
 
-  <label class="section" for="parasitePhylum">Parasite phylum</label>
-  <select id="parasitePhylum"><option value="">All phyla</option></select>
+<div class="sectionTitle">Parasite taxonomy</div>
+<label for="pPhylum">Phylum</label><select id="pPhylum"><option value="">All phyla</option></select>
+<label for="pClass">Class</label><select id="pClass"><option value="">All classes</option></select>
+<label for="pOrder">Order</label><select id="pOrder"><option value="">All orders</option></select>
+<label for="pFamily">Family</label><select id="pFamily"><option value="">All families</option></select>
+<label for="pGenus">Genus</label><select id="pGenus"><option value="">All genera</option></select>
+<label for="pSpecies">Species / identification</label><select id="pSpecies"><option value="">All species / IDs</option></select>
 
-  <label class="section" for="parasiteClass">Parasite class</label>
-  <select id="parasiteClass"><option value="">All classes</option></select>
+<div class="sectionTitle">Time & search</div>
+<label>Association year</label>
+<div class="yearvals"><span id="yearStart">—</span><span id="yearEnd">—</span></div><div id="yearSlider"></div>
+<label for="search">GUID / name search</label><input id="search" type="text" placeholder="Host or parasite identifier / name">
 
-  <label class="section" for="parasiteOrder">Parasite order</label>
-  <select id="parasiteOrder"><option value="">All orders</option></select>
+<button id="reset" class="reset">Reset filters</button>
+<button id="download" class="download">Download Filtered Associations</button>
+<div id="resultNote" class="small" style="margin-top:8px"></div>
 
-  <label class="section" for="parasiteFamily">Parasite family</label>
-  <select id="parasiteFamily"><option value="">All families</option></select>
+<div class="note small"><strong>Evidence-aware integration:</strong> independently cataloged MSB parasite specimens are labeled <code>cataloged_parasite_specimen</code>; KSB parasites retained as host parts are labeled <code>host_part</code>. The tracker searches them together without pretending they have identical provenance.</div>
 
-  <label class="section" for="parasiteGenus">Parasite genus</label>
-  <select id="parasiteGenus"><option value="">All genera</option></select>
-
-  <label class="section" for="parasiteSpecies">Parasite species</label>
-  <select id="parasiteSpecies"><option value="">All species</option></select>
-
-  <label class="section" for="hostTaxon">Host taxon contains</label>
-  <input id="hostTaxon" type="text" placeholder="e.g. Myodes rutilus">
-
-  <label class="section" for="search">GUID / taxon search</label>
-  <input id="search" type="text" placeholder="MSB:Para:1, UAM:Mamm:..., taxon...">
-
-  <button id="reset">Reset filters</button>
-
-  <!-- Download only records matching the current filters. -->
-  <button type="button" class="button" id="download" style="
-    background-color: rgb(237, 237, 237);
-    color: black;
-    font-size: 14px;
-    border: none;
-    border-radius: 10px;
-    width: 100%;
-    margin-top: 10px;
-    padding: 9px;
-    cursor: pointer;
-  ">Download Filtered Data</button>
-  <div id="resultNote" class="small" style="margin-top:8px;"></div>
-
-  <div class="legend">
-    <div><span class="dot" style="background:var(--host)"></span>Host record</div>
-    <p class="small">
-      Each point represents one host record. Parasite filters retain hosts with at least one linked parasite record matching the selected criteria. Absence of a record from the atlas should not be interpreted as biological absence.
-    </p>
-  </div>
-
-  <details class="legend">
-    <summary><strong>About this atlas</strong></summary>
-    <p class="small">
-      The Kansas State Biorepository Host-Parasite Atlas is a specimen-based discovery and visualization tool for exploring associations between museum-vouchered hosts and independently cataloged parasite records. Host and parasite records remain linked to their source specimen identifiers so users can return to the authoritative collection record.
-    </p>
-  </details>
-
-  <details class="legend">
-    <summary><strong>Data interpretation &amp; limitations</strong></summary>
-    <p class="small">
-      Museum records reflect collecting effort, geographic and temporal sampling, digitization, and taxonomic identification. Record density is not a direct measure of abundance, prevalence, or sampling effort, and absence of records is not evidence of biological absence. Taxonomy and specimen metadata may be revised in the source collection after an atlas release is generated.
-    </p>
-    <p class="small">
-      <strong>Development-data note:</strong> the current demonstration dataset was generated from parasite records; host coordinates are inferred from coordinates associated with linked parasite records. A publication release should use authoritative host-record coordinates or explicitly retain this limitation in the accompanying methods.
-    </p>
-  </details>
-
-  <details class="legend">
-    <summary><strong>Data download</strong></summary>
-    <p class="small">
-      “Download Filtered Data” exports the host–parasite associations matching the active filters. Each CSV row represents one host–parasite association. The export is intended for discovery and reproducible filtering; users should consult the linked source specimen records before analyses requiring current identifications, georeferencing uncertainty, or complete collection metadata.
-    </p>
-  </details>
-
-  <div class="legend small">
-    <strong>Release:</strong> development build, 2026-08-18<br>
-    <strong>Repository:</strong> KSBiorepository/KSBiorepository_Host_Parasite_Atlas<br>
-    <strong>Recommended citation:</strong> see <code>CITATION.cff</code> in the repository.
-  </div>
-
+<details class="note"><summary><strong>Current prototype limitations</strong></summary>
+<p class="small">MSB host metadata are still derived partly from information recorded with linked parasite records. KSB host data come from the earlier host-centered export. Authoritative host-record retrieval and a remote database/API backend remain planned.</p>
+</details>
 </aside>
-
-<!-- Leaflet inserts the interactive map into this element. -->
 <div id="map"></div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.js"></script>
-
 <script>
-// ============================================================
-// 1. APPLICATION DATA
-// ============================================================
-//
-// D is the compact atlas object loaded from data/atlas.json.
-//
-// D.s = shared strings
-// D.m = parasite metadata
-// D.h = host metadata
-// D.r = parasite-to-host relationship rows
-//
-// hostRelationships is an index created after loading:
-//     host ID -> relationship row indexes
-//
-let D=null;
-let hostRelationships=[];
-
-// ============================================================
-// 2. LEAFLET MAP INITIALIZATION
-// ============================================================
-//
-// The starting center/zoom are temporary. After data load, the map
-// automatically fits to the geographic extent of all mappable hosts.
-//
+let D=null, mode="host", hostAssoc=[], paraAssoc=[];
+const $=id=>document.getElementById(id);
 const map=L.map("map").setView([39,-98],4);
-// ============================================================
-// 3. BASEMAPS
-// ============================================================
-//
-// These are background/reference maps only. They do not affect
-// filtering or biological interpretation.
-//
-const streets=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"});
+const street=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
 const topo=L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"Map data &copy; OpenStreetMap contributors | Map style &copy; OpenTopoMap"});
-const satellite=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Tiles &copy; Esri"});
-const light=L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",{maxZoom:20,attribution:"&copy; OpenStreetMap contributors &copy; CARTO"});
-streets.addTo(map);
-L.control.layers({"Street Map":streets,"Topographic":topo,"Satellite":satellite,"Light":light},null,{position:"topright"}).addTo(map);
+const sat=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Tiles &copy; Esri"});
+L.control.layers({"Street":street,"Topographic":topo,"Satellite":sat}).addTo(map);
+const cluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:55,showCoverageOnHover:false}).addTo(map);
 
-// ============================================================
-// 4. MARKER CLUSTERING
-// ============================================================
-//
-// Thousands of host points may overlap. MarkerCluster groups nearby
-// hosts until the user zooms in.
-//
-const cluster=L.markerClusterGroup({chunkedLoading:true,showCoverageOnHover:false,maxClusterRadius:55});
-map.addLayer(cluster);
+function s(i){return i===-1||i===null||i===undefined?"":D.s[i]}
+function host(i){const h=D.h[i];return{
+ source:s(h[0]),id:s(h[1]),name:s(h[2]),genus:s(h[3]),family:s(h[4]),order:s(h[5]),
+ sex:s(h[6]),age:s(h[7]),mass:h[8],date:s(h[9]),year:h[10],country:s(h[11]),state:s(h[12]),
+ county:s(h[13]),locality:s(h[14]),lat:h[15],lon:h[16],unc:h[17],geoProv:s(h[18])
+}}
+function parasite(i){const p=D.p[i];return{
+ source:s(p[0]),id:s(p[1]),name:s(p[2]),kingdom:s(p[3]),phylum:s(p[4]),pclass:s(p[5]),
+ order:s(p[6]),family:s(p[7]),genus:s(p[8]),species:s(p[9]),lifeStage:s(p[10]),
+ sex:s(p[11]),locationInHost:s(p[12]),count:p[13]
+}}
+function assoc(i){const a=D.a[i];return{
+ hid:a[0],pid:a[1],source:s(a[2]),evidence:s(a[3]),evidenceId:s(a[4]),note:s(a[5]),
+ date:s(a[6]),year:a[7],country:s(a[8]),state:s(a[9]),locality:s(a[10]),
+ lat:a[11],lon:a[12],geoProv:s(a[13])
+}}
+function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+function arctosUrl(id){return id&&id.includes(":")&&!id.startsWith("http")?`https://arctos.database.museum/guid/${encodeURIComponent(id)}`:(id?.startsWith("http")?id:"")}
+function fill(el,values,label){const old=el.value;const vals=[...new Set(values.filter(Boolean))].sort((a,b)=>a.localeCompare(b));el.innerHTML=`<option value="">${label}</option>`;vals.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;el.appendChild(o)});if(vals.includes(old))el.value=old}
+function years(){const v=$("yearSlider").noUiSlider.get();return [Math.round(+v[0]),Math.round(+v[1])]}
 
-// ============================================================
-// 5. USER-INTERFACE ELEMENT REFERENCES
-// ============================================================
-//
-// Caching these DOM elements makes later filter code cleaner.
-//
-const hostGroup=document.getElementById("hostGroup");
-const hostCollection=document.getElementById("hostCollection");
-const parasiteKingdom=document.getElementById("parasiteKingdom");
-const parasitePhylum=document.getElementById("parasitePhylum");
-const parasiteClass=document.getElementById("parasiteClass");
-const parasiteOrder=document.getElementById("parasiteOrder");
-const parasiteFamily=document.getElementById("parasiteFamily");
-const parasiteGenus=document.getElementById("parasiteGenus");
-const parasiteSpecies=document.getElementById("parasiteSpecies");
-const hostTaxon=document.getElementById("hostTaxon");
-const search=document.getElementById("search");
-const includeUnknownYear=document.getElementById("includeUnknownYear");
-const yearSlider=document.getElementById("yearSlider");
-const startYearLabel=document.getElementById("startYearLabel");
-const endYearLabel=document.getElementById("endYearLabel");
-
-// ============================================================
-// 6. SHARED STRING DECODER
-// ============================================================
-//
-// atlas.json stores repeated text once in D.s.
-//
-// Example:
-//     D.s[123] -> "Myodes rutilus"
-//
-// -1 means the value is missing.
-//
-function s(id) { return id===-1 || id===null || id===undefined ? "" : D.s[id]; }
-// ============================================================
-// 7. PARASITE METADATA DECODER
-// ============================================================
-//
-// D.m[pid] uses this fixed field order:
-//
-// 0 = GUID
-// 1 = scientific name
-// 2 = kingdom
-// 3 = phylum
-// 4 = class
-// 5 = order
-// 6 = family
-// 7 = genus
-// 8 = species
-//
-// Most entries are integer references into D.s.
-//
-// IMPORTANT:
-// If process_compact_atlas.py changes this order, update this function.
-//
-function parasite(pid) {
-  const m=D.m[pid];
-  return {
-    guid:s(m[0]),
-    name:s(m[1]),
-    kingdom:s(m[2]),
-    phylum:s(m[3]),
-    pclass:s(m[4]),
-    order:s(m[5]),
-    family:s(m[6]),
-    genus:s(m[7]),
-    species:s(m[8])
-  };
+function relationPass(i,ignoreTaxRank=null){
+ const a=assoc(i),h=host(a.hid),p=parasite(a.pid),[y0,y1]=years();
+ if($("source").value && a.source!==$("source").value)return false;
+ if($("evidence").value && a.evidence!==$("evidence").value)return false;
+ if($("country").value && a.country!==$("country").value)return false;
+ if($("state").value && a.state!==$("state").value)return false;
+ const ht=$("hostTaxon").value.trim().toLowerCase();
+ if(ht && !`${h.name} ${h.genus} ${h.family} ${h.order}`.toLowerCase().includes(ht))return false;
+ if($("hostSex").value && h.sex!==$("hostSex").value)return false;
+ if($("hostAge").value && h.age!==$("hostAge").value)return false;
+ if(a.year===-1 || a.year<y0 || a.year>y1)return false;
+ const ranks=[["pPhylum","phylum"],["pClass","pclass"],["pOrder","order"],["pFamily","family"],["pGenus","genus"],["pSpecies","species"]];
+ for(const [id,key] of ranks)if(id!==ignoreTaxRank && $(id).value && p[key]!==$(id).value)return false;
+ const q=$("search").value.trim().toLowerCase();
+ if(q&&!`${h.id} ${h.name} ${p.id} ${p.name} ${p.family} ${p.genus} ${p.species}`.toLowerCase().includes(q))return false;
+ return true;
 }
-// ============================================================
-// 8. HOST METADATA DECODER
-// ============================================================
-//
-// D.h[hid] uses this fixed field order:
-//
-// 0 = host GUID
-// 1 = host taxon
-// 2 = host collection
-// 3 = broad host group
-// 4 = latitude
-// 5 = longitude
-// 6 = earliest linked parasite year
-// 7 = latest linked parasite year
-//
-// Practice-data note:
-// host coordinates here are inferred from linked parasite records.
-//
-function host(hid) {
-  const h=D.h[hid];
-  return {guid:s(h[0]),taxon:s(h[1]),collection:s(h[2]),group:s(h[3]),lat:h[4],lon:h[5],minYear:h[6],maxYear:h[7]};
+function matchingAssocIndexes(){const out=[];for(let i=0;i<D.a.length;i++)if(relationPass(i))out.push(i);return out}
+
+function rebuildAllFilters(){
+ const allA=D.a.map((_,i)=>assoc(i));
+ fill($("source"),allA.map(a=>a.source),"All sources");
+ fill($("evidence"),allA.map(a=>a.evidence),"All evidence types");
+ fill($("country"),allA.map(a=>a.country),"All countries");
+ const c=$("country").value;
+ fill($("state"),allA.filter(a=>!c||a.country===c).map(a=>a.state),"All states / provinces");
+ fill($("hostSex"),D.h.map((_,i)=>host(i).sex),"All sexes");
+ fill($("hostAge"),D.h.map((_,i)=>host(i).age),"All ages");
+ rebuildTaxonomy();
 }
-// ============================================================
-// 9. HTML ESCAPING
-// ============================================================
-//
-// Prevents record text from being interpreted as HTML when inserted
-// into popup strings.
-//
-function esc(v) {
-  if(v===null||v===undefined) return "";
-  return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+function rebuildTaxonomy(){
+ const levels=[["pPhylum","phylum"],["pClass","pclass"],["pOrder","order"],["pFamily","family"],["pGenus","genus"],["pSpecies","species"]];
+ const labels={pPhylum:"All phyla",pClass:"All classes",pOrder:"All orders",pFamily:"All families",pGenus:"All genera",pSpecies:"All species / IDs"};
+ let ais=D.a.map((_,i)=>i).filter(i=>{
+   // Apply all non-taxonomy filters and year/search; temporarily clear tax values through ignore strategy below is cumbersome,
+   // so use relationPass after saving/clearing taxonomy.
+   return true;
+ });
+ let ps=D.p.map((_,i)=>parasite(i));
+ // Geography/source/evidence filters are most important for pruning menus.
+ const allowedP=new Set();
+ for(let i=0;i<D.a.length;i++){
+   const a=assoc(i),h=host(a.hid),[y0,y1]=years();
+   if($("source").value&&a.source!==$("source").value)continue;
+   if($("evidence").value&&a.evidence!==$("evidence").value)continue;
+   if($("country").value&&a.country!==$("country").value)continue;
+   if($("state").value&&a.state!==$("state").value)continue;
+   if(a.year===-1||a.year<y0||a.year>y1)continue;
+   allowedP.add(a.pid);
+ }
+ ps=ps.filter((p,i)=>allowedP.has(i));
+ for(const [id,key] of levels){
+   fill($(id),ps.map(p=>p[key]||((id==="pSpecies")?p.name:"")),labels[id]);
+   const val=$(id).value;
+   if(val)ps=ps.filter(p=>(p[key]||((id==="pSpecies")?p.name:""))===val);
+ }
 }
-// ============================================================
-// 10. GENERIC DROPDOWN POPULATOR
-// ============================================================
-//
-// Removes duplicates, sorts choices alphabetically, and rebuilds a
-// <select> menu.
-//
-function fillSelect(el,values,label) {
-  el.innerHTML=`<option value="">${label}</option>`;
-  [...new Set(values.filter(Boolean))].sort().forEach(v=>{
-    const o=document.createElement("option"); o.value=v; o.textContent=v; el.appendChild(o);
-  });
+function pointForAssoc(a){
+ const h=host(a.hid);
+ return [a.lat??h.lat,a.lon??h.lon];
 }
-// ============================================================
-// 11. CASCADING PARASITE TAXONOMY
-// ============================================================
-//
-// Returns parasites satisfying all selected taxonomic ranks ABOVE
-// the dropdown currently being rebuilt.
-//
-// Example:
-// If Phylum = Platyhelminthes, the Class menu will contain only
-// classes represented inside that phylum.
-//
-function filteredParasitesThrough(level) {
-  let vals=D.m.map((x,i)=>parasite(i));
+function hostPopup(hid,ais){
+ const h=host(hid), rows=ais.map(i=>{const a=assoc(i),p=parasite(a.pid);return {a,p}});
+ const url=arctosUrl(h.id);
+ return `<div class="popup-title"><b><i>${esc(h.name||"Host")}</i></b></div><div class="guid">${esc(h.id)}</div>
+ <div class="psect"><b>Host traits:</b><br>Sex: ${esc(h.sex||"—")} · Age: ${esc(h.age||"—")}<br>Locality: ${esc(rows[0]?.a.locality||h.locality||"—")}</div>
+ <div class="psect"><b>Matching parasites (${rows.length})</b>${rows.slice(0,25).map(({a,p})=>`<div class="psect"><i>${esc(p.name||p.species||"Unidentified parasite")}</i><br><span class="guid">${esc(p.id)}</span><br><span class="small">${esc(a.evidence)}${p.count!==null&&p.count!==""?` · count ${esc(p.count)}`:""}</span></div>`).join("")}</div>
+ ${url?`<div class="psect"><a target="_blank" rel="noopener" href="${url}">Open host source record ↗</a></div>`:""}`;
+}
+function paraPopup(pid,ais){
+ const p=parasite(pid),rows=ais.map(i=>{const a=assoc(i),h=host(a.hid);return {a,h}});
+ const url=arctosUrl(p.id);
+ return `<div class="popup-title"><b><i>${esc(p.name||p.species||"Parasite")}</i></b></div><div class="guid">${esc(p.id)}</div>
+ <div class="psect"><b>Taxonomy:</b><br>${esc([p.family,p.order,p.pclass,p.phylum].filter(Boolean).join(" · ")||"Identification only")}</div>
+ <div class="psect"><b>Host${rows.length===1?"":"s"} (${rows.length})</b>${rows.slice(0,25).map(({a,h})=>`<div class="psect"><i>${esc(h.name||"Host taxon unavailable")}</i><br><span class="guid">${esc(h.id)}</span><br><span class="small">${esc(a.evidence)} · ${esc(a.state||a.country||"")}</span></div>`).join("")}</div>
+ ${url?`<div class="psect"><a target="_blank" rel="noopener" href="${url}">Open parasite source record ↗</a></div>`:""}`;
+}
+function render(){
+ cluster.clearLayers();
+ const matches=matchingAssocIndexes(), grouped=new Map(), markers=[];
+ if(mode==="host"){
+   matches.forEach(i=>{const a=assoc(i);if(!grouped.has(a.hid))grouped.set(a.hid,[]);grouped.get(a.hid).push(i)});
+   for(const [hid,ais] of grouped){const h=host(hid),a=assoc(ais[0]),pt=pointForAssoc(a);if(pt[0]==null||pt[1]==null)continue;const m=L.circleMarker(pt,{radius:6,weight:1.3,color:"#fff",fillColor:"#2d7650",fillOpacity:.86});m.bindPopup(hostPopup(hid,ais));markers.push(m)}
+ }else{
+   matches.forEach(i=>{const a=assoc(i);if(!grouped.has(a.pid))grouped.set(a.pid,[]);grouped.get(a.pid).push(i)});
+   for(const [pid,ais] of grouped){const a=assoc(ais[0]),pt=pointForAssoc(a);if(pt[0]==null||pt[1]==null)continue;const m=L.circleMarker(pt,{radius:6,weight:1.3,color:"#fff",fillColor:"#77528c",fillOpacity:.86});m.bindPopup(paraPopup(pid,ais));markers.push(m)}
+ }
+ cluster.addLayers(markers);$("visibleCount").textContent=markers.length.toLocaleString();
+ $("resultNote").textContent=`${matches.length.toLocaleString()} associations match; ${markers.length.toLocaleString()} ${mode==="host"?"hosts":"parasite entities"} are mapped.`;
+}
+function setMode(x){mode=x;$("hostMode").classList.toggle("active",x==="host");$("parasiteMode").classList.toggle("active",x==="parasite");render()}
 
-  if(level!=="kingdom" && parasiteKingdom.value)
-    vals=vals.filter(p=>p.kingdom===parasiteKingdom.value);
-
-  if(!["kingdom","phylum"].includes(level) && parasitePhylum.value)
-    vals=vals.filter(p=>p.phylum===parasitePhylum.value);
-
-  if(!["kingdom","phylum","class"].includes(level) && parasiteClass.value)
-    vals=vals.filter(p=>p.pclass===parasiteClass.value);
-
-  if(!["kingdom","phylum","class","order"].includes(level) && parasiteOrder.value)
-    vals=vals.filter(p=>p.order===parasiteOrder.value);
-
-  if(!["kingdom","phylum","class","order","family"].includes(level) && parasiteFamily.value)
-    vals=vals.filter(p=>p.family===parasiteFamily.value);
-
-  if(!["kingdom","phylum","class","order","family","genus"].includes(level) && parasiteGenus.value)
-    vals=vals.filter(p=>p.genus===parasiteGenus.value);
-
-  return vals;
+function download(){
+ const matches=matchingAssocIndexes(),rows=matches.map(i=>{const a=assoc(i),h=host(a.hid),p=parasite(a.pid);return{
+   source:a.source,evidence_type:a.evidence,evidence_id:a.evidenceId,
+   host_id:h.id,host_scientific_name:h.name,host_genus:h.genus,host_family:h.family,host_order:h.order,
+   host_sex:h.sex,host_age:h.age,host_mass_g:h.mass,host_collection_date:h.date,
+   parasite_id:p.id,parasite_scientific_name:p.name,parasite_phylum:p.phylum,parasite_class:p.pclass,
+   parasite_order:p.order,parasite_family:p.family,parasite_genus:p.genus,parasite_species:p.species,
+   parasite_life_stage:p.lifeStage,parasite_sex:p.sex,location_in_host:p.locationInHost,individual_count:p.count,
+   association_date:a.date,association_year:a.year===-1?"":a.year,country:a.country,state_province:a.state,
+   locality:a.locality,latitude:a.lat,longitude:a.lon,geography_provenance:a.geoProv,evidence_note:a.note
+ }});
+ if(!rows.length){alert("No associations match the current filters.");return}
+ const keys=Object.keys(rows[0]),q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+ const csv="\uFEFF"+[keys.join(","),...rows.map(r=>keys.map(k=>q(r[k])).join(","))].join("\n");
+ const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})),a=document.createElement("a");
+ a.href=url;a.download="mammal_parasite_tracker_filtered_associations.csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
 
-// Rebuilds taxonomy menus beginning at startLevel.
-//
-// Example:
-// changing Family resets and rebuilds Genus and Species only.
-//
-function rebuildParasiteTaxonomy(startLevel="kingdom") {
-  const levels=["kingdom","phylum","class","order","family","genus","species"];
-  const start=levels.indexOf(startLevel);
-
-  if(start<=0){
-    fillSelect(parasiteKingdom,D.m.map((x,i)=>parasite(i).kingdom),"All kingdoms");
-  }
-  if(start<=1){
-    fillSelect(parasitePhylum,filteredParasitesThrough("phylum").map(p=>p.phylum),"All phyla");
-  }
-  if(start<=2){
-    fillSelect(parasiteClass,filteredParasitesThrough("class").map(p=>p.pclass),"All classes");
-  }
-  if(start<=3){
-    fillSelect(parasiteOrder,filteredParasitesThrough("order").map(p=>p.order),"All orders");
-  }
-  if(start<=4){
-    fillSelect(parasiteFamily,filteredParasitesThrough("family").map(p=>p.family),"All families");
-  }
-  if(start<=5){
-    fillSelect(parasiteGenus,filteredParasitesThrough("genus").map(p=>p.genus),"All genera");
-  }
-  if(start<=6){
-    fillSelect(parasiteSpecies,filteredParasitesThrough("species").map(p=>p.species),"All species");
-  }
-}
-
-// ============================================================
-// 12. INITIAL FILTER POPULATION
-// ============================================================
-//
-// Called after atlas.json loads.
-//
-function rebuildFilters() {
-  fillSelect(hostGroup,D.h.map((x,i)=>host(i).group),"All host groups");
-  fillSelect(hostCollection,D.h.map((x,i)=>host(i).collection),"All host collections");
-  rebuildParasiteTaxonomy("kingdom");
-}
-// ============================================================
-// 13. CURRENT YEAR RANGE
-// ============================================================
-//
-// Reads the two handles from the noUiSlider control.
-//
-function yearBounds() {
-  const vals=yearSlider.noUiSlider.get();
-  return [Math.round(Number(vals[0])),Math.round(Number(vals[1]))];
-}
-
-// ============================================================
-// 14. CORE HOST FILTER
-// ============================================================
-//
-// Returns true if a host should remain visible.
-//
-// HOST-LEVEL FILTERS:
-//   - host group
-//   - host collection
-//   - host taxon text
-//
-// PARASITE-LEVEL FILTERS:
-// At least ONE parasite linked to the host must match:
-//   - selected year range
-//   - unknown-year option
-//   - kingdom
-//   - phylum
-//   - class
-//   - order
-//   - family
-//   - genus
-//   - species
-//
-// This is the key host-centered behavior of the atlas.
-//
-function hostPasses(hid) {
-  const h=host(hid);
-  if(h.lat===null || h.lon===null) return false;
-
-  if(hostGroup.value && h.group!==hostGroup.value) return false;
-  if(hostCollection.value && h.collection!==hostCollection.value) return false;
-
-  const ht=hostTaxon.value.trim().toLowerCase();
-  if(ht && !h.taxon.toLowerCase().includes(ht)) return false;
-
-  const rels=hostRelationships[hid]||[];
-  const [minY,maxY]=yearBounds();
-
-  const matchingRels=rels.filter(ri=>{
-    const r=D.r[ri];
-    const year=r[2];
-    const p=parasite(r[0]);
-
-    if(year===-1) {
-      if(!includeUnknownYear.checked) return false;
-    } else if(year<minY || year>maxY) {
-      return false;
-    }
-
-    if(parasiteKingdom.value && p.kingdom!==parasiteKingdom.value) return false;
-    if(parasitePhylum.value && p.phylum!==parasitePhylum.value) return false;
-    if(parasiteClass.value && p.pclass!==parasiteClass.value) return false;
-    if(parasiteOrder.value && p.order!==parasiteOrder.value) return false;
-    if(parasiteFamily.value && p.family!==parasiteFamily.value) return false;
-    if(parasiteGenus.value && p.genus!==parasiteGenus.value) return false;
-    if(parasiteSpecies.value && p.species!==parasiteSpecies.value) return false;
-
-    return true;
-  });
-
-  if(!matchingRels.length) return false;
-
-  const q=search.value.trim().toLowerCase();
-  if(q) {
-    if(`${h.guid} ${h.taxon}`.toLowerCase().includes(q)) return true;
-
-    if(!matchingRels.some(ri=>{
-      const p=parasite(D.r[ri][0]);
-      return `${p.guid} ${p.name}`.toLowerCase().includes(q);
-    })) return false;
-  }
-
-  return true;
-}
-
-// ============================================================
-// 15. HOST POPUP CONSTRUCTION
-// ============================================================
-//
-// Builds the information shown when a host marker is clicked.
-//
-// The popup includes:
-//   - host GUID/taxon
-//   - host collection
-//   - parasite record count
-//   - parasite taxon count
-//   - common parasite identifications
-//   - linked parasite GUIDs
-//   - direct Arctos links
-//
-function hostPopup(hid) {
-  const h=host(hid);
-  const rels=hostRelationships[hid]||[];
-
-  const counts=new Map();
-  for(const ri of rels) {
-    const p=parasite(D.r[ri][0]);
-    const name=p.name||"Unidentified parasite";
-    counts.set(name,(counts.get(name)||0)+1);
-  }
-
-  const top=[...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,12);
-
-  const linked=rels.slice(0,50).map(ri=>{
-    const r=D.r[ri];
-    const p=parasite(r[0]);
-    const year=r[2]===-1 ? "year unknown" : r[2];
-    const taxonomy=[p.family,p.order,p.pclass,p.phylum].filter(Boolean).join(" · ");
-    return `<div class="popup-section">
-      <i>${esc(p.name||"Unidentified parasite")}</i><br>
-      <span class="popup-guid">${esc(p.guid)}</span><br>
-      ${taxonomy ? `<span class="small">${esc(taxonomy)}</span><br>` : ""}
-      <span class="small">${year}</span><br>
-      <a href="https://arctos.database.museum/guid/${encodeURIComponent(p.guid)}" target="_blank" rel="noopener">Open parasite in Arctos ↗</a>
-    </div>`;
-  }).join("");
-
-  return `
-    <div class="popup-title"><i>${esc(h.taxon||"Host")}</i></div>
-    <div class="popup-guid">${esc(h.guid)}</div>
-
-    <div class="popup-section">
-      <b>Host collection:</b> ${esc(h.collection||"Not recorded")}<br>
-      <b>Associated parasite records:</b> ${rels.length.toLocaleString()}<br>
-      <b>Parasite taxa:</b> ${counts.size.toLocaleString()}
-    </div>
-
-    ${top.length ? `<div class="popup-section"><b>Most frequent parasite identifications</b><br>${top.map(([n,c])=>`<div><i>${esc(n)}</i> <span class="small">(${c})</span></div>`).join("")}</div>` : ""}
-
-    <div class="popup-section"><b>Linked parasite records</b></div>
-    ${linked || '<div class="small">No linked parasite records.</div>'}
-    ${rels.length>50 ? '<div class="small">Showing first 50 linked parasite records.</div>' : ""}
-
-    <div class="popup-section">
-      <a href="https://arctos.database.museum/guid/${encodeURIComponent(h.guid)}" target="_blank" rel="noopener">Open host in Arctos ↗</a>
-    </div>`;
-}
-
-// ============================================================
-// 16. MAP RENDERING
-// ============================================================
-//
-// For every host:
-//   1. call hostPasses()
-//   2. skip hosts that fail filters
-//   3. create a Leaflet circle marker for hosts that pass
-//   4. attach the host popup
-//   5. add the marker to the cluster layer
-//
-// Marker size grows slowly with parasite-record count.
-//
-function render() {
-  if(!D || !yearSlider.noUiSlider) return;
-
-  cluster.clearLayers();
-  const markers=[];
-  let count=0;
-
-  for(let hid=0;hid<D.h.length;hid++) {
-    if(!hostPasses(hid)) continue;
-
-    count++;
-    const h=host(hid);
-    const size=Math.min(12,5+Math.log2(Math.max(1,(hostRelationships[hid]||[]).length)));
-
-    const m=L.circleMarker([h.lat,h.lon],{
-      radius:size,
-      weight:1.5,
-      color:"#fff",
-      fillColor:"#2e7d4f",
-      fillOpacity:.86
-    });
-
-    m.bindPopup(hostPopup(hid));
-    markers.push(m);
-  }
-
-  cluster.addLayers(markers);
-
-  document.getElementById("resultNote").textContent=
-    `${count.toLocaleString()} mapped hosts match the current filters.`;
-}
-
-// ============================================================
-// 17. APPLICATION INITIALIZATION
-// ============================================================
-//
-// Runs once when the page loads.
-//
-// Steps:
-//   1. fetch data/atlas.json
-//   2. build host -> relationship index
-//   3. populate filters
-//   4. initialize collection-year slider
-//   5. fit map to host extent
-//
-// Because fetch() is used, open the site through GitHub Pages or
-// a local HTTP server rather than file:///index.html.
-//
-
-// ============================================================
-// 17A. DOWNLOAD CURRENTLY FILTERED HOST-PARASITE DATA
-// ============================================================
-// One output row represents one host-parasite relationship.
-// The same host, year, and parasite-taxonomy filters used by the
-// map are applied to exported rows.
-function downloadFilteredData() {
-
-  const rows = [];
-  const [minY, maxY] = yearBounds();
-
-  for (let hid = 0; hid < D.h.length; hid++) {
-    if (!hostPasses(hid)) continue;
-
-    const h = host(hid);
-    const rels = hostRelationships[hid] || [];
-
-    for (const ri of rels) {
-      const r = D.r[ri];
-      const p = parasite(r[0]);
-      const year = r[2];
-
-      if (year === -1) {
-        if (!includeUnknownYear.checked) continue;
-      } else if (year < minY || year > maxY) {
-        continue;
-      }
-
-      if (parasiteKingdom.value && p.kingdom !== parasiteKingdom.value) continue;
-      if (parasitePhylum.value && p.phylum !== parasitePhylum.value) continue;
-      if (parasiteClass.value && p.pclass !== parasiteClass.value) continue;
-      if (parasiteOrder.value && p.order !== parasiteOrder.value) continue;
-      if (parasiteFamily.value && p.family !== parasiteFamily.value) continue;
-      if (parasiteGenus.value && p.genus !== parasiteGenus.value) continue;
-      if (parasiteSpecies.value && p.species !== parasiteSpecies.value) continue;
-
-      rows.push({
-        host_guid: h.guid,
-        host_taxon: h.taxon,
-        host_collection: h.collection,
-        host_group: h.group,
-        latitude: h.lat,
-        longitude: h.lon,
-        parasite_guid: p.guid,
-        parasite_name: p.name,
-        parasite_kingdom: p.kingdom,
-        parasite_phylum: p.phylum,
-        parasite_class: p.pclass,
-        parasite_order: p.order,
-        parasite_family: p.family,
-        parasite_genus: p.genus,
-        parasite_species: p.species,
-        collection_year: year === -1 ? "" : year,
-        location_in_host: s(r[5]),
-        parasite_life_stage: s(r[6]),
-        parasite_sex: s(r[7]),
-        individual_count: s(r[8])
-      });
-    }
-  }
-
-  console.log("Rows being downloaded:", rows.length);
-
-  if (rows.length === 0) {
-    alert("No host-parasite records match the current filters.");
-    return;
-  }
-
-  const headers = Object.keys(rows[0]);
-  const csvLines = [headers.join(",")];
-
-  for (const row of rows) {
-    const values = headers.map(header => {
-      let value = row[header];
-      if (value === null || value === undefined) value = "";
-      value = String(value).replace(/"/g, '""');
-      return `"${value}"`;
-    });
-    csvLines.push(values.join(","));
-  }
-
-  const csv = csvLines.join("\n");
-  const csvContent = "\uFEFF" + csv;
-
-  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = "kansas_host_parasite_atlas_filtered_associations.csv";
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
-
-async function init() {
-  try {
-    const resp=await fetch("data/atlas.json");
-    if(!resp.ok) throw new Error("Data request failed");
-    D=await resp.json();
-
-    hostRelationships=Array.from({length:D.h.length},()=>[]);
-    D.r.forEach((r,i)=>hostRelationships[r[1]].push(i));
-
-    // Count distinct nonblank host-taxon labels. In this practice
-    // dataset these are derived from the Arctos "verbatim host ID"
-    // attribute associated with parasite records.
-    const uniqueHostSpecies = new Set(
-      D.h.map((x,i)=>host(i).taxon).filter(Boolean)
-    );
-
-    document.getElementById("statHostSpecies").textContent =
-      uniqueHostSpecies.size.toLocaleString();
-
-    // Populate dataset summary cards from the loaded release rather than
-    // hard-coding counts into the webpage.
-    document.getElementById("statParasites").textContent =
-      D.m.length.toLocaleString();
-    document.getElementById("statHosts").textContent =
-      D.h.length.toLocaleString();
-    document.getElementById("statLinks").textContent =
-      D.r.length.toLocaleString();
-
-    rebuildFilters();
-
-    noUiSlider.create(yearSlider,{
-      start:[D.summary.min_year,D.summary.max_year],
-      connect:true, step:1,
-      range:{min:D.summary.min_year,max:D.summary.max_year},
-      format:{to:v=>Math.round(v),from:v=>Number(v)}
-    });
-    yearSlider.noUiSlider.on("update",vals=>{
-      startYearLabel.textContent=Math.round(Number(vals[0]));
-      endYearLabel.textContent=Math.round(Number(vals[1]));
-      render();
-    });
-
-    const coords=D.h.filter(h=>h[4]!==null&&h[5]!==null).map(h=>[h[4],h[5]]);
-    if(coords.length) map.fitBounds(L.latLngBounds(coords).pad(.02));
-  } catch(err) {
-    console.error(err);
-    document.getElementById("loadError").style.display="block";
-  }
-}
-
-// ============================================================
-// 18. FILTER EVENT LISTENERS
-// ============================================================
-//
-// User changes immediately trigger a new map render.
-//
-hostGroup.addEventListener("change",render);
-hostCollection.addEventListener("change",render);
-
-// ------------------------------------------------------------
-// CASCADING TAXONOMY EVENT HANDLERS
-//
-// When a higher rank changes, lower ranks are cleared and rebuilt
-// because their previous values may no longer be valid.
-// ------------------------------------------------------------
-parasiteKingdom.addEventListener("change",()=>{
-  parasitePhylum.value="";
-  parasiteClass.value="";
-  parasiteOrder.value="";
-  parasiteFamily.value="";
-  parasiteGenus.value="";
-  parasiteSpecies.value="";
-  rebuildParasiteTaxonomy("phylum");
-  render();
-});
-
-parasitePhylum.addEventListener("change",()=>{
-  parasiteClass.value="";
-  parasiteOrder.value="";
-  parasiteFamily.value="";
-  parasiteGenus.value="";
-  parasiteSpecies.value="";
-  rebuildParasiteTaxonomy("class");
-  render();
-});
-
-parasiteClass.addEventListener("change",()=>{
-  parasiteOrder.value="";
-  parasiteFamily.value="";
-  parasiteGenus.value="";
-  parasiteSpecies.value="";
-  rebuildParasiteTaxonomy("order");
-  render();
-});
-
-parasiteOrder.addEventListener("change",()=>{
-  parasiteFamily.value="";
-  parasiteGenus.value="";
-  parasiteSpecies.value="";
-  rebuildParasiteTaxonomy("family");
-  render();
-});
-
-parasiteFamily.addEventListener("change",()=>{
-  parasiteGenus.value="";
-  parasiteSpecies.value="";
-  rebuildParasiteTaxonomy("genus");
-  render();
-});
-
-parasiteGenus.addEventListener("change",()=>{
-  parasiteSpecies.value="";
-  rebuildParasiteTaxonomy("species");
-  render();
-});
-
-parasiteSpecies.addEventListener("change",render);
-hostTaxon.addEventListener("input",render);
-search.addEventListener("input",render);
-includeUnknownYear.addEventListener("change",render);
-
-// ============================================================
-// 19. RESET BUTTON
-// ============================================================
-//
-// Restores all host/taxonomy/search filters and the full year range.
-//
-document.getElementById("reset").addEventListener("click",()=>{
-  hostGroup.value="";
-  hostCollection.value="";
-  parasiteKingdom.value="";
-  parasitePhylum.value="";
-  parasiteClass.value="";
-  parasiteOrder.value="";
-  parasiteFamily.value="";
-  parasiteGenus.value="";
-  parasiteSpecies.value="";
-  rebuildParasiteTaxonomy("kingdom");
-  hostTaxon.value="";
-  search.value="";
-  includeUnknownYear.checked=false;
-  yearSlider.noUiSlider.set([D.summary.min_year,D.summary.max_year]);
-  render();
-});
-
-// ============================================================
-// DOWNLOAD BUTTON
-// ============================================================
-document.getElementById("download").addEventListener("click", downloadFilteredData);
-
-// ============================================================
-// 20. START THE APPLICATION
-// ============================================================
-init();
+$("hostMode").onclick=()=>setMode("host");$("parasiteMode").onclick=()=>setMode("parasite");
+["source","evidence","country","state","hostSex","hostAge"].forEach(id=>$(id).addEventListener("change",()=>{if(id==="country")$("state").value="";rebuildAllFilters();render()}));
+$("hostTaxon").addEventListener("input",render);$("search").addEventListener("input",render);
+["pPhylum","pClass","pOrder","pFamily","pGenus"].forEach(id=>$(id).addEventListener("change",()=>{rebuildTaxonomy();render()}));
+$("pSpecies").addEventListener("change",render);$("download").onclick=download;
+$("reset").onclick=()=>{["source","evidence","country","state","hostTaxon","hostSex","hostAge","pPhylum","pClass","pOrder","pFamily","pGenus","pSpecies","search"].forEach(id=>$(id).value="");$("yearSlider").noUiSlider.set([D.summary.min_year||1800,D.summary.max_year||2025]);rebuildAllFilters();render()};
+
+fetch("data/tracker.json").then(r=>{if(!r.ok)throw Error(r.status);return r.json()}).then(d=>{
+ D=d;hostAssoc=Array.from({length:D.h.length},()=>[]);paraAssoc=Array.from({length:D.p.length},()=>[]);
+ D.a.forEach((x,i)=>{hostAssoc[x[0]].push(i);paraAssoc[x[1]].push(i)});
+ // derive year bounds
+ const ys=D.a.map(x=>x[7]).filter(y=>y!==-1);D.summary.min_year=Math.min(...ys);D.summary.max_year=Math.max(...ys);
+ $("hostCount").textContent=D.h.length.toLocaleString();$("paraCount").textContent=D.p.length.toLocaleString();$("assocCount").textContent=D.a.length.toLocaleString();
+ noUiSlider.create($("yearSlider"),{start:[D.summary.min_year,D.summary.max_year],connect:true,step:1,range:{min:D.summary.min_year,max:D.summary.max_year},format:{to:v=>Math.round(v),from:v=>+v}});
+ $("yearSlider").noUiSlider.on("update",v=>{$("yearStart").textContent=Math.round(+v[0]);$("yearEnd").textContent=Math.round(+v[1]);if(D)render()});
+ rebuildAllFilters();
+ const pts=D.a.map((_,i)=>pointForAssoc(assoc(i))).filter(x=>x[0]!=null&&x[1]!=null);if(pts.length)map.fitBounds(L.latLngBounds(pts).pad(.02));
+ render();
+}).catch(e=>{console.error(e);alert("Tracker data could not be loaded. Use GitHub Pages or a local web server.")});
 </script>
-</body>
-</html>
+</body></html>
