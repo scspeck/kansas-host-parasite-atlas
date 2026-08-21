@@ -1,11 +1,13 @@
 {
-  "source_records": 53870,
-  "parasites": 51316,
-  "hosts": 30849,
-  "relationships": 51790,
-  "mapped_relationships": 40733,
-  "mapped_hosts": 24379,
-  "min_year": 1800,
-  "max_year": 2025,
-  "strings": 85283
+  "biological_hosts": 18756,
+  "host_catalog_records": 19446,
+  "parasite_entities": 29878,
+  "associations": 29901,
+  "shared_host_individuals": 690,
+  "msb_reciprocal": 25869,
+  "min_year": 1905,
+  "max_year": 2026,
+  "source_msb_mamm_records": 16924,
+  "source_msb_para_records": 53870,
+  "source_ksb_mamm_records": 3354
 }
