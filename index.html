@@ -9,27 +9,28 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.css">
 <style>
-:root{--border:#d9e0e4;--muted:#65717a;--panel:#fff;--bg:#f3f5f6;--text:#1d252c;--host:#2d7650;--para:#77528c}
+:root{--bg:#f4f6f7;--panel:#fff;--border:#d9e0e4;--text:#1e272d;--muted:#68757d;--host:#28704b;--para:#754f8b}
 *{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:var(--bg)}
-body{display:grid;grid-template-columns:390px 1fr}aside{padding:18px;background:var(--panel);border-right:1px solid var(--border);overflow:auto;z-index:1001}
-#map{height:100vh;width:100%}h1{font-size:1.45rem;margin:0}.subtitle{font-size:.82rem;color:var(--muted);line-height:1.45;margin:5px 0 12px}
-.mode{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}.mode button{background:#fff;color:#222;border:1px solid #abb5bb}
-.mode button.active{background:#27343b;color:#fff}.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}
-.stat{padding:8px;border:1px solid var(--border);border-radius:7px;background:#f8fafb}.stat strong{display:block;font-size:1.08rem}.stat span{font-size:.7rem;color:var(--muted)}
-.sectionTitle{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:#56636b;margin:18px 0 4px;border-bottom:1px solid #e3e7e9;padding-bottom:4px}
-label{display:block;font-size:.82rem;font-weight:700;margin:9px 0 3px}select,input{width:100%;padding:7px;border:1px solid #bbc4ca;border-radius:5px;background:#fff}
-button{width:100%;padding:8px;border:0;border-radius:6px;cursor:pointer;margin-top:8px}.reset{background:#29353d;color:#fff}.download{background:#eceff1;color:#111}
-.yearvals{display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;margin:5px 0}.noUi-connect{background:#677680}#yearSlider{margin:16px 10px 20px}
-.noUi-horizontal{height:8px}.noUi-horizontal .noUi-handle{width:20px;height:20px;right:-10px;top:-7px;border-radius:50%}.noUi-handle:before,.noUi-handle:after{display:none}
-.small{font-size:.73rem;color:var(--muted);line-height:1.4}.note{margin-top:13px;padding:8px;border:1px solid var(--border);background:#fafbfb}
-.popup-title{font-size:1rem}.guid{font-family:monospace;font-size:.75rem;color:#5f6970}.psect{margin-top:8px}.leaflet-popup-content{min-width:280px;max-width:400px;max-height:430px;overflow:auto}
-a{color:#235f91}details summary{cursor:pointer}@media(max-width:800px){body{display:block}aside{height:auto;border-right:0;border-bottom:1px solid var(--border)}#map{height:70vh}}
+body{display:grid;grid-template-columns:405px 1fr}aside{overflow:auto;padding:18px;background:var(--panel);border-right:1px solid var(--border);z-index:1001}
+#map{height:100vh;width:100%}h1{font-size:1.45rem;margin:0}.subtitle{font-size:.8rem;line-height:1.45;color:var(--muted);margin:5px 0 12px}
+.mode{display:grid;grid-template-columns:1fr 1fr;gap:7px}.mode button{margin:0;background:#f2f4f5;color:#222;border:1px solid #adb8be}.mode button.active{background:#29363d;color:#fff}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}.stat{border:1px solid var(--border);background:#f9fafb;border-radius:7px;padding:8px}
+.stat strong{display:block;font-size:1.05rem}.stat span{font-size:.68rem;color:var(--muted)}
+.section{font-size:.73rem;letter-spacing:.08em;text-transform:uppercase;color:#53616a;font-weight:700;margin:17px 0 4px;padding-bottom:4px;border-bottom:1px solid #e5e9eb}
+label{font-size:.8rem;font-weight:700;display:block;margin:8px 0 3px}select,input{width:100%;padding:7px;border:1px solid #bac4ca;border-radius:5px;background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:6px}.yearvals{display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;margin:5px 0}
+#yearSlider{margin:16px 10px 19px}.noUi-connect{background:#687780}.noUi-horizontal{height:8px}.noUi-horizontal .noUi-handle{width:20px;height:20px;right:-10px;top:-7px;border-radius:50%}.noUi-handle:before,.noUi-handle:after{display:none}
+button{width:100%;padding:8px;border:0;border-radius:6px;cursor:pointer;margin-top:8px}.reset{background:#2c3940;color:#fff}.download{background:#eceff0;color:#111}
+.small{font-size:.72rem;line-height:1.45;color:var(--muted)}.note{border:1px solid var(--border);padding:8px;margin-top:12px;background:#fbfcfc;border-radius:5px}
+.leaflet-popup-content{min-width:290px;max-width:420px;max-height:450px;overflow:auto}.guid{font-family:monospace;font-size:.74rem;color:#5b6870}.ps{margin-top:8px}.rec{border-top:1px solid #eee;margin-top:7px;padding-top:7px}
+a{color:#245f8d}details summary{cursor:pointer}.warn{font-size:.7rem;color:#6c5432}
+@media(max-width:830px){body{display:block}aside{height:auto;border-right:0;border-bottom:1px solid var(--border)}#map{height:70vh}}
 </style>
 </head>
 <body>
 <aside>
 <h1>Mammal–Parasite Tracker</h1>
-<div class="subtitle">A specimen-linked discovery prototype that normalizes separate parasite records and parasites retained as host parts into one Host ↔ Parasite ↔ Association model.</div>
+<div class="subtitle">Authoritative-host rebuild using MSB:Mamm, MSB:Para, and KSB:Mamm. Shared MSB/KSB records linked by <i>same individual as</i> are represented as one biological host.</div>
 
 <div class="mode">
 <button id="hostMode" class="active">Host Mode</button>
@@ -37,47 +38,50 @@ a{color:#235f91}details summary{cursor:pointer}@media(max-width:800px){body{disp
 </div>
 
 <div class="stats">
-<div class="stat"><strong id="hostCount">—</strong><span>hosts</span></div>
-<div class="stat"><strong id="paraCount">—</strong><span>parasite entities</span></div>
-<div class="stat"><strong id="assocCount">—</strong><span>associations</span></div>
-<div class="stat"><strong id="visibleCount">—</strong><span>visible map records</span></div>
+<div class="stat"><strong id="nHosts">—</strong><span>biological hosts</span></div>
+<div class="stat"><strong id="nHostRecords">—</strong><span>host catalog records</span></div>
+<div class="stat"><strong id="nParasites">—</strong><span>parasite entities / observations</span></div>
+<div class="stat"><strong id="nVisible">—</strong><span>visible mapped records</span></div>
 </div>
 
-<div class="sectionTitle">Data source & evidence</div>
-<label for="source">Source dataset</label><select id="source"><option value="">All sources</option></select>
-<label for="evidence">Association evidence</label><select id="evidence"><option value="">All evidence types</option></select>
+<div class="section">Association provenance</div>
+<label for="source">Data source</label><select id="source"><option value="">All sources</option></select>
+<label for="evidence">Evidence type</label><select id="evidence"><option value="">All evidence types</option></select>
+<label for="status">Relationship verification</label><select id="status"><option value="">All statuses</option></select>
 
-<div class="sectionTitle">Geography</div>
+<div class="section">Geography</div>
 <label for="country">Country</label><select id="country"><option value="">All countries</option></select>
 <label for="state">State / Province</label><select id="state"><option value="">All states / provinces</option></select>
 
-<div class="sectionTitle">Host</div>
-<label for="hostTaxon">Host taxon contains</label><input id="hostTaxon" type="text" placeholder="e.g. Peromyscus">
-<label for="hostSex">Host sex</label><select id="hostSex"><option value="">All sexes</option></select>
-<label for="hostAge">Host age / life stage</label><select id="hostAge"><option value="">All ages</option></select>
+<div class="section">Host</div>
+<label for="hostCollection">Host catalog collection</label><select id="hostCollection"><option value="">All host collections</option></select>
+<label for="hostName">Host taxon contains</label><input id="hostName" type="text" placeholder="e.g. Myodes, Cricetidae">
+<div class="two">
+<div><label for="hostSex">Sex</label><select id="hostSex"><option value="">All</option></select></div>
+<div><label for="hostStage">Life stage</label><select id="hostStage"><option value="">All</option></select></div>
+</div>
+<label>Body weight (g)</label>
+<div class="two"><input id="minWeight" type="number" step="0.1" placeholder="Minimum"><input id="maxWeight" type="number" step="0.1" placeholder="Maximum"></div>
 
-<div class="sectionTitle">Parasite taxonomy</div>
+<div class="section">Parasite</div>
+<label for="recordType">Parasite record type</label><select id="recordType"><option value="">All record types</option></select>
 <label for="pPhylum">Phylum</label><select id="pPhylum"><option value="">All phyla</option></select>
 <label for="pClass">Class</label><select id="pClass"><option value="">All classes</option></select>
 <label for="pOrder">Order</label><select id="pOrder"><option value="">All orders</option></select>
 <label for="pFamily">Family</label><select id="pFamily"><option value="">All families</option></select>
 <label for="pGenus">Genus</label><select id="pGenus"><option value="">All genera</option></select>
-<label for="pSpecies">Species / identification</label><select id="pSpecies"><option value="">All species / IDs</option></select>
+<label for="pName">Species / identification</label><select id="pName"><option value="">All identifications</option></select>
 
-<div class="sectionTitle">Time & search</div>
-<label>Association year</label>
-<div class="yearvals"><span id="yearStart">—</span><span id="yearEnd">—</span></div><div id="yearSlider"></div>
-<label for="search">GUID / name search</label><input id="search" type="text" placeholder="Host or parasite identifier / name">
+<div class="section">Time & search</div>
+<label>Association year</label><div class="yearvals"><span id="y0Label">—</span><span id="y1Label">—</span></div><div id="yearSlider"></div>
+<label for="search">GUID / taxon / locality search</label><input id="search" type="text" placeholder="Search both sides of association">
 
 <button id="reset" class="reset">Reset filters</button>
 <button id="download" class="download">Download Filtered Associations</button>
 <div id="resultNote" class="small" style="margin-top:8px"></div>
 
-<div class="note small"><strong>Evidence-aware integration:</strong> independently cataloged MSB parasite specimens are labeled <code>cataloged_parasite_specimen</code>; KSB parasites retained as host parts are labeled <code>host_part</code>. The tracker searches them together without pretending they have identical provenance.</div>
-
-<details class="note"><summary><strong>Current prototype limitations</strong></summary>
-<p class="small">MSB host metadata are still derived partly from information recorded with linked parasite records. KSB host data come from the earlier host-centered export. Authoritative host-record retrieval and a remote database/API backend remain planned.</p>
-</details>
+<div class="note small"><strong>Interpretation:</strong> MSB parasite records are independently cataloged vouchers. KSB parasite entries in this build are positive detection observations from host attributes. They remain distinguishable through the evidence and record-type fields.</div>
+<details class="note"><summary><strong>About shared hosts</strong></summary><p class="small">When a loaded KSB:Mamm record is explicitly linked as <i>same individual as</i> a loaded MSB:Mamm record, Host Mode counts and maps that biological individual once while preserving both catalog GUIDs in the popup and download.</p></details>
 </aside>
 <div id="map"></div>
 
@@ -85,164 +89,144 @@ a{color:#235f91}details summary{cursor:pointer}@media(max-width:800px){body{disp
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.js"></script>
 <script>
-let D=null, mode="host", hostAssoc=[], paraAssoc=[];
-const $=id=>document.getElementById(id);
-const map=L.map("map").setView([39,-98],4);
+let D=null,mode="host",hostAssoc=[],paraAssoc=[];
+const $=id=>document.getElementById(id),map=L.map("map").setView([39,-98],4);
 const street=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
 const topo=L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"Map data &copy; OpenStreetMap contributors | Map style &copy; OpenTopoMap"});
 const sat=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Tiles &copy; Esri"});
 L.control.layers({"Street":street,"Topographic":topo,"Satellite":sat}).addTo(map);
 const cluster=L.markerClusterGroup({chunkedLoading:true,maxClusterRadius:55,showCoverageOnHover:false}).addTo(map);
 
-function s(i){return i===-1||i===null||i===undefined?"":D.s[i]}
-function host(i){const h=D.h[i];return{
- source:s(h[0]),id:s(h[1]),name:s(h[2]),genus:s(h[3]),family:s(h[4]),order:s(h[5]),
- sex:s(h[6]),age:s(h[7]),mass:h[8],date:s(h[9]),year:h[10],country:s(h[11]),state:s(h[12]),
- county:s(h[13]),locality:s(h[14]),lat:h[15],lon:h[16],unc:h[17],geoProv:s(h[18])
-}}
-function parasite(i){const p=D.p[i];return{
- source:s(p[0]),id:s(p[1]),name:s(p[2]),kingdom:s(p[3]),phylum:s(p[4]),pclass:s(p[5]),
- order:s(p[6]),family:s(p[7]),genus:s(p[8]),species:s(p[9]),lifeStage:s(p[10]),
- sex:s(p[11]),locationInHost:s(p[12]),count:p[13]
-}}
-function assoc(i){const a=D.a[i];return{
- hid:a[0],pid:a[1],source:s(a[2]),evidence:s(a[3]),evidenceId:s(a[4]),note:s(a[5]),
- date:s(a[6]),year:a[7],country:s(a[8]),state:s(a[9]),locality:s(a[10]),
- lat:a[11],lon:a[12],geoProv:s(a[13])
-}}
+function s(i){return i===-1||i==null?"":D.s[i]}
+function hr(i){const x=D.hr[i];return{source:s(x[0]),guid:s(x[1]),name:s(x[2]),family:s(x[3]),genus:s(x[4]),species:s(x[5]),sex:s(x[6]),stage:s(x[7]),weight:x[8],total:x[9],tail:x[10],hind:x[11],ear:x[12],repro:s(x[13]),date:s(x[14]),year:x[15],country:s(x[16]),state:s(x[17]),county:s(x[18]),locality:s(x[19]),lat:x[20],lon:x[21],unc:x[22]}}
+function host(i){const x=D.h[i];return{bio:s(x[0]),name:s(x[1]),family:s(x[2]),genus:s(x[3]),species:s(x[4]),sex:s(x[5]),stage:s(x[6]),weight:x[7],total:x[8],tail:x[9],hind:x[10],ear:x[11],repro:s(x[12]),date:s(x[13]),year:x[14],country:s(x[15]),state:s(x[16]),county:s(x[17]),locality:s(x[18]),lat:x[19],lon:x[20],unc:x[21],records:x[22]}}
+function para(i){const x=D.p[i];return{id:s(x[0]),source:s(x[1]),type:s(x[2]),name:s(x[3]),kingdom:s(x[4]),phylum:s(x[5]),pclass:s(x[6]),order:s(x[7]),family:s(x[8]),genus:s(x[9]),species:s(x[10]),stage:s(x[11]),sex:s(x[12]),location:s(x[13]),count:x[14]}}
+function assoc(i){const x=D.a[i];return{hid:x[0],pid:x[1],source:s(x[2]),evidence:s(x[3]),status:s(x[4]),hostGuid:s(x[5]),parasiteId:s(x[6]),date:s(x[7]),year:x[8],country:s(x[9]),state:s(x[10]),locality:s(x[11]),lat:x[12],lon:x[13],note:s(x[14])}}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function arctosUrl(id){return id&&id.includes(":")&&!id.startsWith("http")?`https://arctos.database.museum/guid/${encodeURIComponent(id)}`:(id?.startsWith("http")?id:"")}
-function fill(el,values,label){const old=el.value;const vals=[...new Set(values.filter(Boolean))].sort((a,b)=>a.localeCompare(b));el.innerHTML=`<option value="">${label}</option>`;vals.forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;el.appendChild(o)});if(vals.includes(old))el.value=old}
-function years(){const v=$("yearSlider").noUiSlider.get();return [Math.round(+v[0]),Math.round(+v[1])]}
+function link(g){return g&&/^[^:]+:[^:]+:\d+$/.test(g)?`https://arctos.database.museum/guid/${encodeURIComponent(g)}`:""}
+function fill(el,vals,label){const old=el.value,v=[...new Set(vals.filter(Boolean))].sort((a,b)=>a.localeCompare(b));el.innerHTML=`<option value="">${label}</option>`;v.forEach(x=>{const o=document.createElement("option");o.value=x;o.textContent=x;el.appendChild(o)});if(v.includes(old))el.value=old}
+function bounds(){const v=$("yearSlider").noUiSlider.get();return[Math.round(+v[0]),Math.round(+v[1])]}
 
-function relationPass(i,ignoreTaxRank=null){
- const a=assoc(i),h=host(a.hid),p=parasite(a.pid),[y0,y1]=years();
- if($("source").value && a.source!==$("source").value)return false;
- if($("evidence").value && a.evidence!==$("evidence").value)return false;
- if($("country").value && a.country!==$("country").value)return false;
- if($("state").value && a.state!==$("state").value)return false;
- const ht=$("hostTaxon").value.trim().toLowerCase();
- if(ht && !`${h.name} ${h.genus} ${h.family} ${h.order}`.toLowerCase().includes(ht))return false;
- if($("hostSex").value && h.sex!==$("hostSex").value)return false;
- if($("hostAge").value && h.age!==$("hostAge").value)return false;
- if(a.year===-1 || a.year<y0 || a.year>y1)return false;
- const ranks=[["pPhylum","phylum"],["pClass","pclass"],["pOrder","order"],["pFamily","family"],["pGenus","genus"],["pSpecies","species"]];
- for(const [id,key] of ranks)if(id!==ignoreTaxRank && $(id).value && p[key]!==$(id).value)return false;
+function hostHasCollection(h,collection){return !collection||h.records.some(i=>hr(i).source===collection)}
+
+function passes(i){
+ const a=assoc(i),h=host(a.hid),p=para(a.pid),[lo,hi]=bounds();
+ if($("source").value&&a.source!==$("source").value)return false;
+ if($("evidence").value&&a.evidence!==$("evidence").value)return false;
+ if($("status").value&&a.status!==$("status").value)return false;
+ if($("country").value&&a.country!==$("country").value)return false;
+ if($("state").value&&a.state!==$("state").value)return false;
+ if($("hostCollection").value&&!hostHasCollection(h,$("hostCollection").value))return false;
+ const hn=$("hostName").value.trim().toLowerCase();
+ if(hn&&!`${h.name} ${h.family} ${h.genus} ${h.species}`.toLowerCase().includes(hn))return false;
+ if($("hostSex").value&&h.sex!==$("hostSex").value)return false;
+ if($("hostStage").value&&h.stage!==$("hostStage").value)return false;
+ const w0=+$("minWeight").value,w1=+$("maxWeight").value;
+ if(w0&&!(h.weight!=null&&h.weight>=w0))return false;if(w1&&!(h.weight!=null&&h.weight<=w1))return false;
+ if($("recordType").value&&p.type!==$("recordType").value)return false;
+ if($("pPhylum").value&&p.phylum!==$("pPhylum").value)return false;
+ if($("pClass").value&&p.pclass!==$("pClass").value)return false;
+ if($("pOrder").value&&p.order!==$("pOrder").value)return false;
+ if($("pFamily").value&&p.family!==$("pFamily").value)return false;
+ if($("pGenus").value&&p.genus!==$("pGenus").value)return false;
+ if($("pName").value&&(p.species||p.name)!==$("pName").value)return false;
+ if(a.year===-1||a.year<lo||a.year>hi)return false;
  const q=$("search").value.trim().toLowerCase();
- if(q&&!`${h.id} ${h.name} ${p.id} ${p.name} ${p.family} ${p.genus} ${p.species}`.toLowerCase().includes(q))return false;
+ if(q){
+   let hs=h.records.map(j=>{const r=hr(j);return `${r.guid} ${r.name} ${r.locality}`}).join(" ");
+   if(!`${hs} ${p.id} ${p.name} ${p.family} ${p.genus} ${p.species} ${a.locality}`.toLowerCase().includes(q))return false;
+ }
  return true;
 }
-function matchingAssocIndexes(){const out=[];for(let i=0;i<D.a.length;i++)if(relationPass(i))out.push(i);return out}
+function matches(){const z=[];for(let i=0;i<D.a.length;i++)if(passes(i))z.push(i);return z}
 
-function rebuildAllFilters(){
- const allA=D.a.map((_,i)=>assoc(i));
- fill($("source"),allA.map(a=>a.source),"All sources");
- fill($("evidence"),allA.map(a=>a.evidence),"All evidence types");
- fill($("country"),allA.map(a=>a.country),"All countries");
- const c=$("country").value;
- fill($("state"),allA.filter(a=>!c||a.country===c).map(a=>a.state),"All states / provinces");
- fill($("hostSex"),D.h.map((_,i)=>host(i).sex),"All sexes");
- fill($("hostAge"),D.h.map((_,i)=>host(i).age),"All ages");
- rebuildTaxonomy();
+function rebuild(){
+ const A=D.a.map((_,i)=>assoc(i));
+ fill($("source"),A.map(a=>a.source),"All sources");
+ fill($("evidence"),A.map(a=>a.evidence),"All evidence types");
+ fill($("status"),A.map(a=>a.status),"All statuses");
+ fill($("country"),A.map(a=>a.country),"All countries");
+ const c=$("country").value;fill($("state"),A.filter(a=>!c||a.country===c).map(a=>a.state),"All states / provinces");
+ fill($("hostCollection"),D.hr.map((_,i)=>hr(i).source),"All host collections");
+ fill($("hostSex"),D.h.map((_,i)=>host(i).sex),"All");
+ fill($("hostStage"),D.h.map((_,i)=>host(i).stage),"All");
+ fill($("recordType"),D.p.map((_,i)=>para(i).type),"All record types");
+ rebuildTax();
 }
-function rebuildTaxonomy(){
- const levels=[["pPhylum","phylum"],["pClass","pclass"],["pOrder","order"],["pFamily","family"],["pGenus","genus"],["pSpecies","species"]];
- const labels={pPhylum:"All phyla",pClass:"All classes",pOrder:"All orders",pFamily:"All families",pGenus:"All genera",pSpecies:"All species / IDs"};
- let ais=D.a.map((_,i)=>i).filter(i=>{
-   // Apply all non-taxonomy filters and year/search; temporarily clear tax values through ignore strategy below is cumbersome,
-   // so use relationPass after saving/clearing taxonomy.
-   return true;
- });
- let ps=D.p.map((_,i)=>parasite(i));
- // Geography/source/evidence filters are most important for pruning menus.
- const allowedP=new Set();
+function rebuildTax(){
+ let ids=new Set();
+ const [lo,hi]=bounds();
  for(let i=0;i<D.a.length;i++){
-   const a=assoc(i),h=host(a.hid),[y0,y1]=years();
+   const a=assoc(i),h=host(a.hid);
    if($("source").value&&a.source!==$("source").value)continue;
    if($("evidence").value&&a.evidence!==$("evidence").value)continue;
+   if($("status").value&&a.status!==$("status").value)continue;
    if($("country").value&&a.country!==$("country").value)continue;
    if($("state").value&&a.state!==$("state").value)continue;
-   if(a.year===-1||a.year<y0||a.year>y1)continue;
-   allowedP.add(a.pid);
+   if(a.year===-1||a.year<lo||a.year>hi)continue;
+   ids.add(a.pid);
  }
- ps=ps.filter((p,i)=>allowedP.has(i));
- for(const [id,key] of levels){
-   fill($(id),ps.map(p=>p[key]||((id==="pSpecies")?p.name:"")),labels[id]);
-   const val=$(id).value;
-   if(val)ps=ps.filter(p=>(p[key]||((id==="pSpecies")?p.name:""))===val);
+ let ps=D.p.map((_,i)=>para(i)).filter((p,i)=>ids.has(i));
+ const levels=[["pPhylum","phylum","All phyla"],["pClass","pclass","All classes"],["pOrder","order","All orders"],["pFamily","family","All families"],["pGenus","genus","All genera"],["pName","name","All identifications"]];
+ for(const [id,key,label] of levels){
+   fill($(id),ps.map(p=>id==="pName"?(p.species||p.name):p[key]),label);
+   const val=$(id).value;if(val)ps=ps.filter(p=>(id==="pName"?(p.species||p.name):p[key])===val);
  }
-}
-function pointForAssoc(a){
- const h=host(a.hid);
- return [a.lat??h.lat,a.lon??h.lon];
 }
 function hostPopup(hid,ais){
- const h=host(hid), rows=ais.map(i=>{const a=assoc(i),p=parasite(a.pid);return {a,p}});
- const url=arctosUrl(h.id);
- return `<div class="popup-title"><b><i>${esc(h.name||"Host")}</i></b></div><div class="guid">${esc(h.id)}</div>
- <div class="psect"><b>Host traits:</b><br>Sex: ${esc(h.sex||"—")} · Age: ${esc(h.age||"—")}<br>Locality: ${esc(rows[0]?.a.locality||h.locality||"—")}</div>
- <div class="psect"><b>Matching parasites (${rows.length})</b>${rows.slice(0,25).map(({a,p})=>`<div class="psect"><i>${esc(p.name||p.species||"Unidentified parasite")}</i><br><span class="guid">${esc(p.id)}</span><br><span class="small">${esc(a.evidence)}${p.count!==null&&p.count!==""?` · count ${esc(p.count)}`:""}</span></div>`).join("")}</div>
- ${url?`<div class="psect"><a target="_blank" rel="noopener" href="${url}">Open host source record ↗</a></div>`:""}`;
+ const h=host(hid);
+ const recs=h.records.map(i=>hr(i));
+ return `<b><i>${esc(h.name||"Host")}</i></b><br><span class="guid">${esc(h.bio)}</span>
+ <div class="ps"><b>Host traits</b><br>Sex: ${esc(h.sex||"—")} · Life stage: ${esc(h.stage||"—")} · Weight: ${h.weight??"—"} g<br>
+ ${esc(h.locality||"—")} ${h.state?`· ${esc(h.state)}`:""}</div>
+ <div class="ps"><b>Catalog record${recs.length>1?"s":""}</b>${recs.map(r=>`<div class="rec">${esc(r.source)} · <span class="guid">${esc(r.guid)}</span>${link(r.guid)?`<br><a target="_blank" rel="noopener" href="${link(r.guid)}">Open in Arctos ↗</a>`:""}</div>`).join("")}</div>
+ <div class="ps"><b>Matching parasite associations (${ais.length})</b>${ais.slice(0,30).map(i=>{const a=assoc(i),p=para(a.pid);return`<div class="rec"><i>${esc(p.name||"Unidentified parasite")}</i><br><span class="guid">${esc(p.id)}</span><br><span class="small">${esc(p.type)} · ${esc(a.evidence)} · ${esc(a.status)}</span>${a.note?`<br><span class="small">${esc(a.note)}</span>`:""}${link(p.id)?`<br><a target="_blank" rel="noopener" href="${link(p.id)}">Open parasite in Arctos ↗</a>`:""}</div>`}).join("")}</div>`;
 }
 function paraPopup(pid,ais){
- const p=parasite(pid),rows=ais.map(i=>{const a=assoc(i),h=host(a.hid);return {a,h}});
- const url=arctosUrl(p.id);
- return `<div class="popup-title"><b><i>${esc(p.name||p.species||"Parasite")}</i></b></div><div class="guid">${esc(p.id)}</div>
- <div class="psect"><b>Taxonomy:</b><br>${esc([p.family,p.order,p.pclass,p.phylum].filter(Boolean).join(" · ")||"Identification only")}</div>
- <div class="psect"><b>Host${rows.length===1?"":"s"} (${rows.length})</b>${rows.slice(0,25).map(({a,h})=>`<div class="psect"><i>${esc(h.name||"Host taxon unavailable")}</i><br><span class="guid">${esc(h.id)}</span><br><span class="small">${esc(a.evidence)} · ${esc(a.state||a.country||"")}</span></div>`).join("")}</div>
- ${url?`<div class="psect"><a target="_blank" rel="noopener" href="${url}">Open parasite source record ↗</a></div>`:""}`;
+ const p=para(pid);
+ return `<b><i>${esc(p.name||"Parasite observation")}</i></b><br><span class="guid">${esc(p.id)}</span>
+ <div class="ps"><b>Record type:</b> ${esc(p.type)}<br><b>Source:</b> ${esc(p.source)}<br><b>Taxonomy:</b> ${esc([p.family,p.order,p.pclass,p.phylum].filter(Boolean).join(" · ")||"broad/unresolved identification")}</div>
+ <div class="ps"><b>Associated host${ais.length>1?"s":""}</b>${ais.slice(0,30).map(i=>{const a=assoc(i),h=host(a.hid);return`<div class="rec"><i>${esc(h.name||"Host")}</i><br>${h.records.map(j=>`<span class="guid">${esc(hr(j).guid)}</span>`).join("<br>")}<br><span class="small">${esc(a.evidence)} · ${esc(a.status)} · ${esc(a.state||a.country||"")}</span></div>`}).join("")}</div>
+ ${link(p.id)?`<div class="ps"><a target="_blank" rel="noopener" href="${link(p.id)}">Open parasite in Arctos ↗</a></div>`:""}`;
 }
 function render(){
- cluster.clearLayers();
- const matches=matchingAssocIndexes(), grouped=new Map(), markers=[];
- if(mode==="host"){
-   matches.forEach(i=>{const a=assoc(i);if(!grouped.has(a.hid))grouped.set(a.hid,[]);grouped.get(a.hid).push(i)});
-   for(const [hid,ais] of grouped){const h=host(hid),a=assoc(ais[0]),pt=pointForAssoc(a);if(pt[0]==null||pt[1]==null)continue;const m=L.circleMarker(pt,{radius:6,weight:1.3,color:"#fff",fillColor:"#2d7650",fillOpacity:.86});m.bindPopup(hostPopup(hid,ais));markers.push(m)}
- }else{
-   matches.forEach(i=>{const a=assoc(i);if(!grouped.has(a.pid))grouped.set(a.pid,[]);grouped.get(a.pid).push(i)});
-   for(const [pid,ais] of grouped){const a=assoc(ais[0]),pt=pointForAssoc(a);if(pt[0]==null||pt[1]==null)continue;const m=L.circleMarker(pt,{radius:6,weight:1.3,color:"#fff",fillColor:"#77528c",fillOpacity:.86});m.bindPopup(paraPopup(pid,ais));markers.push(m)}
- }
- cluster.addLayers(markers);$("visibleCount").textContent=markers.length.toLocaleString();
- $("resultNote").textContent=`${matches.length.toLocaleString()} associations match; ${markers.length.toLocaleString()} ${mode==="host"?"hosts":"parasite entities"} are mapped.`;
+ cluster.clearLayers();const mm=matches(),groups=new Map(),markers=[];
+ if(mode==="host"){mm.forEach(i=>{const a=assoc(i);if(!groups.has(a.hid))groups.set(a.hid,[]);groups.get(a.hid).push(i)});
+ for(const [hid,ais] of groups){const h=host(hid);if(h.lat==null||h.lon==null)continue;const m=L.circleMarker([h.lat,h.lon],{radius:6,weight:1.3,color:"#fff",fillColor:"#28704b",fillOpacity:.87});m.bindPopup(hostPopup(hid,ais));markers.push(m)}}
+ else{mm.forEach(i=>{const a=assoc(i);if(!groups.has(a.pid))groups.set(a.pid,[]);groups.get(a.pid).push(i)});
+ for(const [pid,ais] of groups){const a=assoc(ais[0]),h=host(a.hid),lat=a.lat??h.lat,lon=a.lon??h.lon;if(lat==null||lon==null)continue;const m=L.circleMarker([lat,lon],{radius:6,weight:1.3,color:"#fff",fillColor:"#754f8b",fillOpacity:.87});m.bindPopup(paraPopup(pid,ais));markers.push(m)}}
+ cluster.addLayers(markers);$("nVisible").textContent=markers.length.toLocaleString();$("resultNote").textContent=`${mm.length.toLocaleString()} associations match; ${markers.length.toLocaleString()} ${mode==="host"?"biological hosts":"parasite entities/observations"} mapped.`;
 }
 function setMode(x){mode=x;$("hostMode").classList.toggle("active",x==="host");$("parasiteMode").classList.toggle("active",x==="parasite");render()}
-
 function download(){
- const matches=matchingAssocIndexes(),rows=matches.map(i=>{const a=assoc(i),h=host(a.hid),p=parasite(a.pid);return{
-   source:a.source,evidence_type:a.evidence,evidence_id:a.evidenceId,
-   host_id:h.id,host_scientific_name:h.name,host_genus:h.genus,host_family:h.family,host_order:h.order,
-   host_sex:h.sex,host_age:h.age,host_mass_g:h.mass,host_collection_date:h.date,
-   parasite_id:p.id,parasite_scientific_name:p.name,parasite_phylum:p.phylum,parasite_class:p.pclass,
-   parasite_order:p.order,parasite_family:p.family,parasite_genus:p.genus,parasite_species:p.species,
-   parasite_life_stage:p.lifeStage,parasite_sex:p.sex,location_in_host:p.locationInHost,individual_count:p.count,
-   association_date:a.date,association_year:a.year===-1?"":a.year,country:a.country,state_province:a.state,
-   locality:a.locality,latitude:a.lat,longitude:a.lon,geography_provenance:a.geoProv,evidence_note:a.note
+ const mm=matches(),rows=mm.map(i=>{const a=assoc(i),h=host(a.hid),p=para(a.pid),recs=h.records.map(j=>hr(j));return{
+  biological_host_id:h.bio,host_catalog_guids:recs.map(r=>r.guid).join("; "),host_collections:recs.map(r=>r.source).join("; "),
+  host_scientific_name:h.name,host_family:h.family,host_genus:h.genus,host_species:h.species,host_sex:h.sex,host_life_stage:h.stage,
+  host_weight_g:h.weight,host_total_length_mm:h.total,host_tail_length_mm:h.tail,host_hind_foot_mm:h.hind,host_ear_mm:h.ear,
+  host_reproductive_data:h.repro,host_collection_date:h.date,
+  parasite_id:p.id,parasite_source:p.source,parasite_record_type:p.type,parasite_scientific_name:p.name,parasite_phylum:p.phylum,
+  parasite_class:p.pclass,parasite_order:p.order,parasite_family:p.family,parasite_genus:p.genus,parasite_species:p.species,
+  evidence_type:a.evidence,relationship_status:a.status,association_source:a.source,source_host_guid:a.hostGuid,
+  association_date:a.date,association_year:a.year===-1?"":a.year,country:a.country,state_province:a.state,locality:a.locality,
+  latitude:a.lat,longitude:a.lon,evidence_note:a.note
  }});
- if(!rows.length){alert("No associations match the current filters.");return}
- const keys=Object.keys(rows[0]),q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
- const csv="\uFEFF"+[keys.join(","),...rows.map(r=>keys.map(k=>q(r[k])).join(","))].join("\n");
- const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})),a=document.createElement("a");
+ if(!rows.length){alert("No matching associations.");return}const keys=Object.keys(rows[0]),q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+ const csv="\uFEFF"+[keys.join(","),...rows.map(r=>keys.map(k=>q(r[k])).join(","))].join("\n"),url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})),a=document.createElement("a");
  a.href=url;a.download="mammal_parasite_tracker_filtered_associations.csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
 }
-
 $("hostMode").onclick=()=>setMode("host");$("parasiteMode").onclick=()=>setMode("parasite");
-["source","evidence","country","state","hostSex","hostAge"].forEach(id=>$(id).addEventListener("change",()=>{if(id==="country")$("state").value="";rebuildAllFilters();render()}));
-$("hostTaxon").addEventListener("input",render);$("search").addEventListener("input",render);
-["pPhylum","pClass","pOrder","pFamily","pGenus"].forEach(id=>$(id).addEventListener("change",()=>{rebuildTaxonomy();render()}));
-$("pSpecies").addEventListener("change",render);$("download").onclick=download;
-$("reset").onclick=()=>{["source","evidence","country","state","hostTaxon","hostSex","hostAge","pPhylum","pClass","pOrder","pFamily","pGenus","pSpecies","search"].forEach(id=>$(id).value="");$("yearSlider").noUiSlider.set([D.summary.min_year||1800,D.summary.max_year||2025]);rebuildAllFilters();render()};
+["source","evidence","status","country","state","hostCollection","hostSex","hostStage","recordType"].forEach(id=>$(id).addEventListener("change",()=>{if(id==="country")$("state").value="";rebuild();render()}));
+["hostName","minWeight","maxWeight","search"].forEach(id=>$(id).addEventListener("input",render));
+["pPhylum","pClass","pOrder","pFamily","pGenus"].forEach(id=>$(id).addEventListener("change",()=>{rebuildTax();render()}));$("pName").onchange=render;$("download").onclick=download;
+$("reset").onclick=()=>{["source","evidence","status","country","state","hostCollection","hostName","hostSex","hostStage","minWeight","maxWeight","recordType","pPhylum","pClass","pOrder","pFamily","pGenus","pName","search"].forEach(id=>$(id).value="");$("yearSlider").noUiSlider.set([D.summary.min_year,D.summary.max_year]);rebuild();render()};
 
 fetch("data/tracker.json").then(r=>{if(!r.ok)throw Error(r.status);return r.json()}).then(d=>{
- D=d;hostAssoc=Array.from({length:D.h.length},()=>[]);paraAssoc=Array.from({length:D.p.length},()=>[]);
- D.a.forEach((x,i)=>{hostAssoc[x[0]].push(i);paraAssoc[x[1]].push(i)});
- // derive year bounds
- const ys=D.a.map(x=>x[7]).filter(y=>y!==-1);D.summary.min_year=Math.min(...ys);D.summary.max_year=Math.max(...ys);
- $("hostCount").textContent=D.h.length.toLocaleString();$("paraCount").textContent=D.p.length.toLocaleString();$("assocCount").textContent=D.a.length.toLocaleString();
+ D=d;hostAssoc=Array.from({length:D.h.length},()=>[]);paraAssoc=Array.from({length:D.p.length},()=>[]);D.a.forEach((a,i)=>{hostAssoc[a[0]].push(i);paraAssoc[a[1]].push(i)});
+ $("nHosts").textContent=D.summary.biological_hosts.toLocaleString();$("nHostRecords").textContent=D.summary.host_catalog_records.toLocaleString();$("nParasites").textContent=D.summary.parasite_entities.toLocaleString();
  noUiSlider.create($("yearSlider"),{start:[D.summary.min_year,D.summary.max_year],connect:true,step:1,range:{min:D.summary.min_year,max:D.summary.max_year},format:{to:v=>Math.round(v),from:v=>+v}});
- $("yearSlider").noUiSlider.on("update",v=>{$("yearStart").textContent=Math.round(+v[0]);$("yearEnd").textContent=Math.round(+v[1]);if(D)render()});
- rebuildAllFilters();
- const pts=D.a.map((_,i)=>pointForAssoc(assoc(i))).filter(x=>x[0]!=null&&x[1]!=null);if(pts.length)map.fitBounds(L.latLngBounds(pts).pad(.02));
- render();
+ $("yearSlider").noUiSlider.on("update",v=>{$("y0Label").textContent=Math.round(+v[0]);$("y1Label").textContent=Math.round(+v[1]);if(D)render()});
+ rebuild();const pts=D.h.map((_,i)=>host(i)).filter(h=>h.lat!=null&&h.lon!=null).map(h=>[h.lat,h.lon]);if(pts.length)map.fitBounds(L.latLngBounds(pts).pad(.02));render();
 }).catch(e=>{console.error(e);alert("Tracker data could not be loaded. Use GitHub Pages or a local web server.")});
 </script>
-</body></html>
+</body>
+</html>

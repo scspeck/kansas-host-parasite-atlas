@@ -1,83 +1,48 @@
-# Mammal–Parasite Tracker — v1 Architecture Prototype
+# Mammal–Parasite Tracker — Authoritative Host Rebuild v2
 
-This version changes the project from a single-source atlas into a **collection-agnostic mammal–parasite discovery framework**.
+This rebuild uses authoritative host records rather than inferring host traits/geography from parasite records.
 
-## Core model
+## Inputs
 
-All inputs are normalized into three entities:
+- MSB:Mamm: 16,924 source records
+- MSB:Para: 53,870 source records
+- KSB:Mamm: 3,354 source records
 
-- **Hosts**
-- **Parasites**
-- **Associations**
+## Browser dataset
 
-The interface then provides two views of exactly the same association data:
+The current tracker contains:
 
-- **Host Mode:** one mapped host with all matching parasites.
-- **Parasite Mode:** one mapped parasite entity with its matching mammal host(s).
+- **18,756 biological host individuals**
+- **19,446 host catalog records**
+- **690 biological hosts represented by both loaded MSB:Mamm and KSB:Mamm records**
+- **29,878 parasite entities/positive observations**
+- **29,901 association rows**
+- **25,869 reciprocally documented MSB host–parasite relationships**
 
-See `docs/CANONICAL_SCHEMA.md`.
+## Host reconciliation
 
-## Sources included in this prototype
+Explicit Arctos `same individual as` relationships are used to collapse loaded MSB:Mamm and KSB:Mamm catalog records into one biological host for map display and counting. Both source GUIDs remain preserved.
 
-### MSB:Para adapter
+## Parasite evidence
 
-Processes independently cataloged Arctos parasite records linked to hosts through explicit `parasite of` relationships.
+Two evidence models are intentionally distinguished:
 
-- Hosts: 30,906
-- Parasite records: 51,376
-- Associations: 51,864
-- Unresolved non-GUID host relationships: 129
+- `cataloged_parasite_specimen`: independently cataloged MSB:Para voucher.
+- `detection_observation`: positive parasite detection stored on the KSB:Mamm host record.
 
-Evidence type: `cataloged_parasite_specimen`.
+These can be searched together but should not be interpreted as equivalent sampling units.
 
-### KSB:Mamm host-part adapter
+## Interface
 
-Processes the earlier KSB prototype in which parasites remain parts of the host specimen. The adapter converts each documented parasite part/parsed parasite type into a searchable parasite entity linked to its mammal host while retaining evidence provenance.
+- **Host Mode** maps one point per reconciled biological mammal host.
+- **Parasite Mode** maps parasite specimens/positive observations.
+- Filters cover provenance, geography, host traits, parasite taxonomy, body weight, and time.
+- **Download Filtered Associations** exports host traits, all loaded host GUIDs, parasite information, evidence, verification status, and geography together.
 
-- Hosts: 131
-- Parasite entities: 151
-- Associations: 151
+## Important next improvements
 
-Evidence type: `host_part`.
-
-## Combined prototype
-
-- Hosts: 31,037
-- Parasite entities: 51,527
-- Associations: 52,015
-
-`data/tracker.json` is the compact browser dataset (~11.8 MB).  
-`data/canonical.json.gz` is a compressed verbose representation for development/reference.
-
-## Generic CSV support
-
-`adapters/generic_csv.py` converts a collection-specific CSV using a JSON column mapping such as `examples/generic_mapping.json`.
-
-`import.html` is an early browser-side column-mapping shell. It currently validates and previews mappings locally; the next step is to have it generate canonical entities and launch the map without any server upload.
-
-## Why adapters matter
-
-Collections do not have to organize parasites identically.
-
-```text
-MSB:Para                        KSB:Mamm
-separate parasite GUID          parasite retained as host part
-        │                                │
-        └──────── adapters ──────────────┘
-                         │
-                         v
-             Host / Parasite / Association
-                         │
-                 ┌───────┴───────┐
-                 v               v
-              Host Mode      Parasite Mode
-                         │
-                         v
-                 combined download
-```
-
-Future adapters can target Arctos authoritative host records, ALA/GBIF occurrence services, other museum exports, or user-supplied CSV files.
-
-## Current deployment
-
-The prototype remains static and GitHub-Pages compatible. That is intentional for development. A future multi-user service with remote APIs and persistent uploads will likely move to a backend architecture such as FastAPI + PostgreSQL/PostGIS while retaining this canonical model as the API contract.
+1. Link KSB positive detections to retained parasite parts without double-counting.
+2. Add richer parasite traits from MSB:Para `ATTRIBUTEDETAIL`.
+3. Normalize reproductive traits and measurement units.
+4. Add arbitrary CSV import through the same schema.
+5. Add remote collection/API adapters and an embeddable service.
