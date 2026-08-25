@@ -227,7 +227,6 @@ function render(){
    const m=L.circleMarker([h.lat,h.lon]);
    styleHostMarker(m,hid);
    m.bindPopup(hostPopup(hid,ais));
-   m.on("click",()=>{toggleHost(hid,m);});
    m.on("contextmenu",e=>{L.DomEvent.stopPropagation(e);toggleHost(hid,m)});
    markers.push(m)
  }
