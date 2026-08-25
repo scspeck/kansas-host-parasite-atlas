@@ -125,7 +125,7 @@ function host(i){const x=D.h[i];return{bio:s(x[0]),name:s(x[1]),family:s(x[2]),g
 function para(i){const x=D.p[i];return{id:s(x[0]),source:s(x[1]),type:s(x[2]),name:s(x[3]),kingdom:s(x[4]),phylum:s(x[5]),pclass:s(x[6]),order:s(x[7]),family:s(x[8]),genus:s(x[9]),species:s(x[10]),stage:s(x[11]),sex:s(x[12]),location:s(x[13]),count:x[14]}}
 function assoc(i){const x=D.a[i];return{hid:x[0],pid:x[1],source:s(x[2]),evidence:s(x[3]),status:s(x[4]),hostGuid:s(x[5]),parasiteId:s(x[6]),date:s(x[7]),year:x[8],country:s(x[9]),state:s(x[10]),locality:s(x[11]),lat:x[12],lon:x[13],note:s(x[14])}}
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function link(g){return g&&/^[^:]+:[^:]+:\d+$/.test(g)?`https://arctos.database.museum/guid/${encodeURIComponent(g)}`:""}
+function link(g){return g&&/^[^:]+:[^:]+:\d+$/.test(g)? `https://arctos.database.museum/guid/${g}`: "";}
 function fill(el,vals,label){const old=el.value,v=[...new Set(vals.filter(Boolean))].sort((a,b)=>a.localeCompare(b));el.innerHTML=`<option value="">${label}</option>`;v.forEach(x=>{const o=document.createElement("option");o.value=x;o.textContent=x;el.appendChild(o)});if(v.includes(old))el.value=old}
 function bounds(){const v=$("yearSlider").noUiSlider.get();return[Math.round(+v[0]),Math.round(+v[1])]}
 
