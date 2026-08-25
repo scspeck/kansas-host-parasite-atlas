@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
 <style>
 :root{--bg:#f4f6f7;--panel:#fff;--border:#d9e0e4;--text:#1e272d;--muted:#68757d;--host:#28704b;--para:#754f8b}
 *{box-sizing:border-box}html,body{height:100%;margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--text);background:var(--bg)}
@@ -23,31 +24,26 @@ label{font-size:.8rem;font-weight:700;display:block;margin:8px 0 3px}select,inpu
 button{width:100%;padding:8px;border:0;border-radius:6px;cursor:pointer;margin-top:8px}.reset{background:#2c3940;color:#fff}.download{background:#eceff0;color:#111}
 .small{font-size:.72rem;line-height:1.45;color:var(--muted)}.note{border:1px solid var(--border);padding:8px;margin-top:12px;background:#fbfcfc;border-radius:5px}
 .leaflet-popup-content{min-width:290px;max-width:420px;max-height:450px;overflow:auto}.guid{font-family:monospace;font-size:.74rem;color:#5b6870}.ps{margin-top:8px}.rec{border-top:1px solid #eee;margin-top:7px;padding-top:7px}
-a{color:#245f8d}details summary{cursor:pointer}.warn{font-size:.7rem;color:#6c5432}
+a{color:#245f8d}details summary{cursor:pointer}.warn{font-size:.7rem;color:#6c5432}.selected-host{filter:drop-shadow(0 0 3px #111)} #uploadMapper select{margin-bottom:4px}
 @media(max-width:830px){body{display:block}aside{height:auto;border-right:0;border-bottom:1px solid var(--border)}#map{height:70vh}}
 </style>
 </head>
 <body>
 <aside>
 <h1>Mammal–Parasite Tracker</h1>
-<div class="subtitle">Authoritative-host rebuild using MSB:Mamm, MSB:Para, and KSB:Mamm. Shared MSB/KSB records linked by <i>same individual as</i> are represented as one biological host.</div>
+<div class="subtitle">Host-focused mammal–parasite mapper using MSB:Mamm, MSB:Para, and KSB:Mamm. Parasites remain searchable, but the map displays biological mammal hosts; clicking a host lists its matching parasite records and links.</div>
 
-<div class="mode">
-<button id="hostMode" class="active">Host Mode</button>
-<button id="parasiteMode">Parasite Mode</button>
-</div>
 
 <div class="stats">
 <div class="stat"><strong id="nHosts">—</strong><span>biological hosts</span></div>
 <div class="stat"><strong id="nHostRecords">—</strong><span>host catalog records</span></div>
 <div class="stat"><strong id="nParasites">—</strong><span>parasite entities / observations</span></div>
-<div class="stat"><strong id="nVisible">—</strong><span>visible mapped records</span></div>
+<div class="stat"><strong id="nVisible">—</strong><span>visible host points</span></div>
 </div>
 
 <div class="section">Association provenance</div>
 <label for="source">Data source</label><select id="source"><option value="">All sources</option></select>
 <label for="evidence">Evidence type</label><select id="evidence"><option value="">All evidence types</option></select>
-<label for="status">Relationship verification</label><select id="status"><option value="">All statuses</option></select>
 
 <div class="section">Geography</div>
 <label for="country">Country</label><select id="country"><option value="">All countries</option></select>
@@ -76,11 +72,33 @@ a{color:#245f8d}details summary{cursor:pointer}.warn{font-size:.7rem;color:#6c54
 <label>Association year</label><div class="yearvals"><span id="y0Label">—</span><span id="y1Label">—</span></div><div id="yearSlider"></div>
 <label for="search">GUID / taxon / locality search</label><input id="search" type="text" placeholder="Search both sides of association">
 
+<div class="section">Spatial selection</div>
+<div class="small">Click a host point to add/remove it from the selection, or use the polygon tool on the map to select all visible host points inside an area.</div>
+<div class="two">
+<button id="clearSelection" class="download">Clear Selection</button>
+<button id="downloadSelected" class="download">Download Selected</button>
+</div>
+<div id="selectionNote" class="small" style="margin-top:6px">0 host points selected.</div>
+
+<div class="section">Add your data</div>
+<div class="small">Upload a CSV locally in your browser. The file is not sent to a server. After upload, map its columns to the tracker fields.</div>
+<input id="csvFile" type="file" accept=".csv,text/csv">
+<div id="uploadMapper" class="note" style="display:none">
+<label>Host scientific name</label><select id="uHost"></select>
+<label>Parasite scientific name / identification</label><select id="uParasite"></select>
+<div class="two"><div><label>Latitude</label><select id="uLat"></select></div><div><label>Longitude</label><select id="uLon"></select></div></div>
+<div class="two"><div><label>Year / date</label><select id="uDate"></select></div><div><label>State / Province</label><select id="uState"></select></div></div>
+<div class="two"><div><label>Country</label><select id="uCountry"></select></div><div><label>Host GUID / ID</label><select id="uHostId"></select></div></div>
+<label>Parasite GUID / ID</label><select id="uParasiteId"></select>
+<button id="addUploaded" class="reset">Add Uploaded Data to Map</button>
+<div id="uploadNote" class="small"></div>
+</div>
+
 <button id="reset" class="reset">Reset filters</button>
-<button id="download" class="download">Download Filtered Associations</button>
+<button id="download" class="download">Download All Filtered Associations</button>
 <div id="resultNote" class="small" style="margin-top:8px"></div>
 
-<div class="note small"><strong>Interpretation:</strong> MSB parasite records are independently cataloged vouchers. KSB parasite entries in this build are positive detection observations from host attributes. They remain distinguishable through the evidence and record-type fields.</div>
+<div class="note small"><strong>Interpretation:</strong> MSB parasite records are independently cataloged vouchers. KSB parasite entries are positive detection observations from host attributes. Uploaded CSV records are temporary browser-session data. All parasite evidence remains listed beneath the host rather than becoming a separate map view.</div>
 <details class="note"><summary><strong>About shared hosts</strong></summary><p class="small">When a loaded KSB:Mamm record is explicitly linked as <i>same individual as</i> a loaded MSB:Mamm record, Host Mode counts and maps that biological individual once while preserving both catalog GUIDs in the popup and download.</p></details>
 </aside>
 <div id="map"></div>
@@ -88,8 +106,9 @@ a{color:#245f8d}details summary{cursor:pointer}.warn{font-size:.7rem;color:#6c54
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/nouislider@15.8.1/dist/nouislider.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
 <script>
-let D=null,mode="host",hostAssoc=[],paraAssoc=[];
+let D=null,hostAssoc=[],paraAssoc=[],selectedHosts=new Set(),visibleHostGroups=new Map(),uploadedRows=[];
 const $=id=>document.getElementById(id),map=L.map("map").setView([39,-98],4);
 const street=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
 const topo=L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"Map data &copy; OpenStreetMap contributors | Map style &copy; OpenTopoMap"});
@@ -113,7 +132,6 @@ function passes(i){
  const a=assoc(i),h=host(a.hid),p=para(a.pid),[lo,hi]=bounds();
  if($("source").value&&a.source!==$("source").value)return false;
  if($("evidence").value&&a.evidence!==$("evidence").value)return false;
- if($("status").value&&a.status!==$("status").value)return false;
  if($("country").value&&a.country!==$("country").value)return false;
  if($("state").value&&a.state!==$("state").value)return false;
  if($("hostCollection").value&&!hostHasCollection(h,$("hostCollection").value))return false;
@@ -144,7 +162,6 @@ function rebuild(){
  const A=D.a.map((_,i)=>assoc(i));
  fill($("source"),A.map(a=>a.source),"All sources");
  fill($("evidence"),A.map(a=>a.evidence),"All evidence types");
- fill($("status"),A.map(a=>a.status),"All statuses");
  fill($("country"),A.map(a=>a.country),"All countries");
  const c=$("country").value;fill($("state"),A.filter(a=>!c||a.country===c).map(a=>a.state),"All states / provinces");
  fill($("hostCollection"),D.hr.map((_,i)=>hr(i).source),"All host collections");
@@ -160,7 +177,6 @@ function rebuildTax(){
    const a=assoc(i),h=host(a.hid);
    if($("source").value&&a.source!==$("source").value)continue;
    if($("evidence").value&&a.evidence!==$("evidence").value)continue;
-   if($("status").value&&a.status!==$("status").value)continue;
    if($("country").value&&a.country!==$("country").value)continue;
    if($("state").value&&a.state!==$("state").value)continue;
    if(a.year===-1||a.year<lo||a.year>hi)continue;
@@ -189,36 +205,111 @@ function paraPopup(pid,ais){
  <div class="ps"><b>Associated host${ais.length>1?"s":""}</b>${ais.slice(0,30).map(i=>{const a=assoc(i),h=host(a.hid);return`<div class="rec"><i>${esc(h.name||"Host")}</i><br>${h.records.map(j=>`<span class="guid">${esc(hr(j).guid)}</span>`).join("<br>")}<br><span class="small">${esc(a.evidence)} · ${esc(a.status)} · ${esc(a.state||a.country||"")}</span></div>`}).join("")}</div>
  ${link(p.id)?`<div class="ps"><a target="_blank" rel="noopener" href="${link(p.id)}">Open parasite in Arctos ↗</a></div>`:""}`;
 }
+function styleHostMarker(m,hid){
+ const selected=selectedHosts.has(hid);
+ m.setStyle({radius:selected?8:6,weight:selected?3:1.3,color:selected?"#20282d":"#fff",fillColor:"#28704b",fillOpacity:.9});
+}
+function toggleHost(hid,m){
+ if(selectedHosts.has(hid))selectedHosts.delete(hid);else selectedHosts.add(hid);
+ styleHostMarker(m,hid);updateSelectionNote();
+}
+function updateSelectionNote(){
+ $("selectionNote").textContent=`${selectedHosts.size.toLocaleString()} host point${selectedHosts.size===1?"":"s"} selected.`;
+}
 function render(){
- cluster.clearLayers();const mm=matches(),groups=new Map(),markers=[];
- if(mode==="host"){mm.forEach(i=>{const a=assoc(i);if(!groups.has(a.hid))groups.set(a.hid,[]);groups.get(a.hid).push(i)});
- for(const [hid,ais] of groups){const h=host(hid);if(h.lat==null||h.lon==null)continue;const m=L.circleMarker([h.lat,h.lon],{radius:6,weight:1.3,color:"#fff",fillColor:"#28704b",fillOpacity:.87});m.bindPopup(hostPopup(hid,ais));markers.push(m)}}
- else{mm.forEach(i=>{const a=assoc(i);if(!groups.has(a.pid))groups.set(a.pid,[]);groups.get(a.pid).push(i)});
- for(const [pid,ais] of groups){const a=assoc(ais[0]),h=host(a.hid),lat=a.lat??h.lat,lon=a.lon??h.lon;if(lat==null||lon==null)continue;const m=L.circleMarker([lat,lon],{radius:6,weight:1.3,color:"#fff",fillColor:"#754f8b",fillOpacity:.87});m.bindPopup(paraPopup(pid,ais));markers.push(m)}}
- cluster.addLayers(markers);$("nVisible").textContent=markers.length.toLocaleString();$("resultNote").textContent=`${mm.length.toLocaleString()} associations match; ${markers.length.toLocaleString()} ${mode==="host"?"biological hosts":"parasite entities/observations"} mapped.`;
+ cluster.clearLayers();const mm=matches(),groups=new Map(),markers=[];visibleHostGroups=groups;
+ mm.forEach(i=>{const a=assoc(i);if(!groups.has(a.hid))groups.set(a.hid,[]);groups.get(a.hid).push(i)});
+ for(const [hid,ais] of groups){
+   const h=host(hid);if(h.lat==null||h.lon==null)continue;
+   const m=L.circleMarker([h.lat,h.lon]);
+   styleHostMarker(m,hid);
+   m.on("click",e=>{if(e.originalEvent&&(e.originalEvent.ctrlKey||e.originalEvent.metaKey||e.originalEvent.shiftKey)){L.DomEvent.stopPropagation(e);toggleHost(hid,m)}});
+   m.bindPopup(hostPopup(hid,ais));
+   // Single ordinary click opens the host; Ctrl/Cmd/Shift-click toggles selection.
+   m.on("contextmenu",e=>{L.DomEvent.stopPropagation(e);toggleHost(hid,m)});
+   markers.push(m)
+ }
+ cluster.addLayers(markers);$("nVisible").textContent=markers.length.toLocaleString();
+ $("resultNote").textContent=`${mm.length.toLocaleString()} associations match; ${markers.length.toLocaleString()} biological hosts mapped. Right-click or Ctrl/Cmd/Shift-click a host to select it.`;
+ updateSelectionNote();
 }
-function setMode(x){mode=x;$("hostMode").classList.toggle("active",x==="host");$("parasiteMode").classList.toggle("active",x==="parasite");render()}
-function download(){
- const mm=matches(),rows=mm.map(i=>{const a=assoc(i),h=host(a.hid),p=para(a.pid),recs=h.records.map(j=>hr(j));return{
-  biological_host_id:h.bio,host_catalog_guids:recs.map(r=>r.guid).join("; "),host_collections:recs.map(r=>r.source).join("; "),
-  host_scientific_name:h.name,host_family:h.family,host_genus:h.genus,host_species:h.species,host_sex:h.sex,host_life_stage:h.stage,
-  host_weight_g:h.weight,host_total_length_mm:h.total,host_tail_length_mm:h.tail,host_hind_foot_mm:h.hind,host_ear_mm:h.ear,
-  host_reproductive_data:h.repro,host_collection_date:h.date,
-  parasite_id:p.id,parasite_source:p.source,parasite_record_type:p.type,parasite_scientific_name:p.name,parasite_phylum:p.phylum,
-  parasite_class:p.pclass,parasite_order:p.order,parasite_family:p.family,parasite_genus:p.genus,parasite_species:p.species,
-  evidence_type:a.evidence,relationship_status:a.status,association_source:a.source,source_host_guid:a.hostGuid,
-  association_date:a.date,association_year:a.year===-1?"":a.year,country:a.country,state_province:a.state,locality:a.locality,
-  latitude:a.lat,longitude:a.lon,evidence_note:a.note
- }});
- if(!rows.length){alert("No matching associations.");return}const keys=Object.keys(rows[0]),q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
- const csv="\uFEFF"+[keys.join(","),...rows.map(r=>keys.map(k=>q(r[k])).join(","))].join("\n"),url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"})),a=document.createElement("a");
- a.href=url;a.download="mammal_parasite_tracker_filtered_associations.csv";document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
-}
-$("hostMode").onclick=()=>setMode("host");$("parasiteMode").onclick=()=>setMode("parasite");
-["source","evidence","status","country","state","hostCollection","hostSex","hostStage","recordType"].forEach(id=>$(id).addEventListener("change",()=>{if(id==="country")$("state").value="";rebuild();render()}));
+["source","evidence","country","state","hostCollection","hostSex","hostStage","recordType"].forEach(id=>$(id).addEventListener("change",()=>{if(id==="country")$("state").value="";rebuild();render()}));
 ["hostName","minWeight","maxWeight","search"].forEach(id=>$(id).addEventListener("input",render));
-["pPhylum","pClass","pOrder","pFamily","pGenus"].forEach(id=>$(id).addEventListener("change",()=>{rebuildTax();render()}));$("pName").onchange=render;$("download").onclick=download;
-$("reset").onclick=()=>{["source","evidence","status","country","state","hostCollection","hostName","hostSex","hostStage","minWeight","maxWeight","recordType","pPhylum","pClass","pOrder","pFamily","pGenus","pName","search"].forEach(id=>$(id).value="");$("yearSlider").noUiSlider.set([D.summary.min_year,D.summary.max_year]);rebuild();render()};
+["pPhylum","pClass","pOrder","pFamily","pGenus"].forEach(id=>$(id).addEventListener("change",()=>{rebuildTax();render()}));$("pName").onchange=render;
+$("download").onclick=()=>download(false);
+$("downloadSelected").onclick=()=>download(true);
+$("clearSelection").onclick=()=>{selectedHosts.clear();render()};
+$("reset").onclick=()=>{["source","evidence","country","state","hostCollection","hostName","hostSex","hostStage","minWeight","maxWeight","recordType","pPhylum","pClass","pOrder","pFamily","pGenus","pName","search"].forEach(id=>$(id).value="");selectedHosts.clear();$("yearSlider").noUiSlider.set([D.summary.min_year,D.summary.max_year]);rebuild();render()};
+
+// Polygon selection: drawn shapes are temporary selection tools, not permanent data layers.
+const drawnItems=new L.FeatureGroup().addTo(map);
+const drawControl=new L.Control.Draw({position:"topleft",draw:{polyline:false,rectangle:false,circle:false,circlemarker:false,marker:false,polygon:{allowIntersection:false,showArea:true}},edit:{featureGroup:drawnItems,edit:false,remove:true}});
+map.addControl(drawControl);
+function pointInPoly(lat,lon,latlngs){
+ let inside=false;for(let i=0,j=latlngs.length-1;i<latlngs.length;j=i++){
+   const xi=latlngs[i].lng,yi=latlngs[i].lat,xj=latlngs[j].lng,yj=latlngs[j].lat;
+   const intersect=((yi>lat)!=(yj>lat))&&(lon<(xj-xi)*(lat-yi)/(yj-yi)+xi);if(intersect)inside=!inside;
+ }return inside;
+}
+map.on(L.Draw.Event.CREATED,e=>{
+ drawnItems.clearLayers();drawnItems.addLayer(e.layer);
+ const ring=e.layer.getLatLngs()[0];selectedHosts.clear();
+ for(const [hid] of visibleHostGroups){const h=host(hid);if(h.lat!=null&&h.lon!=null&&pointInPoly(h.lat,h.lon,ring))selectedHosts.add(hid)}
+ render();
+});
+
+// ---------- Local CSV upload ----------
+function parseCSV(text){
+ const rows=[];let row=[],field="",q=false;
+ for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];
+   if(c=='"'){if(q&&n=='"'){field+='"';i++}else q=!q}
+   else if(c==","&&!q){row.push(field);field=""}
+   else if((c=="\n"||c=="\r")&&!q){if(c=="\r"&&n=="\n")i++;row.push(field);field="";if(row.some(x=>x!==""))rows.push(row);row=[]}
+   else field+=c;
+ }if(field||row.length){row.push(field);rows.push(row)}return rows;
+}
+function mapSelect(id,headers,required=false){
+ const el=$(id);el.innerHTML=`<option value="">${required?"— choose column —":"— none —"}</option>`;
+ headers.forEach((h,i)=>{const o=document.createElement("option");o.value=i;o.textContent=h;el.appendChild(o)});
+}
+function guess(headers,patterns){
+ const low=headers.map(x=>x.toLowerCase().replace(/[^a-z0-9]/g,""));
+ for(const pat of patterns){const i=low.findIndex(x=>x===pat||x.includes(pat));if(i>=0)return String(i)}return "";
+}
+$("csvFile").addEventListener("change",async e=>{
+ const f=e.target.files[0];if(!f)return;const rows=parseCSV(await f.text());if(rows.length<2){alert("CSV has no data rows.");return}
+ const headers=rows[0].map(x=>x.trim());uploadedRows=rows.slice(1).map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??""])));
+ ["uHost","uParasite","uLat","uLon","uDate","uState","uCountry","uHostId","uParasiteId"].forEach(id=>mapSelect(id,headers,["uHost","uLat","uLon"].includes(id)));
+ const guesses={
+  uHost:["hostscientificname","hostspecies","hosttaxon","scientificname"],
+  uParasite:["parasitescientificname","parasitename","parasitespecies","parasite"],
+  uLat:["decimallatitude","declat","latitude","lat"],uLon:["decimallongitude","declong","longitude","lon","long"],
+  uDate:["eventdate","collectiondate","verbatimdate","year","date"],uState:["stateprovince","stateprov","state"],
+  uCountry:["country"],uHostId:["hostguid","hostid","guid"],uParasiteId:["parasiteguid","parasiteid"]
+ };
+ for(const [id,pats] of Object.entries(guesses)){const v=guess(headers,pats);if(v)$(id).value=v}
+ $("uploadMapper").style.display="block";$("uploadNote").textContent=`${uploadedRows.length.toLocaleString()} rows loaded for column mapping.`;
+});
+function addString(v){if(v==null||v==="")return -1;v=String(v);let i=D.s.indexOf(v);if(i<0){i=D.s.length;D.s.push(v)}return i}
+function uv(row,id){const i=$(id).value;return i===""?"":Object.values(row)[+i]??""}
+$("addUploaded").onclick=()=>{
+ if(!uploadedRows.length||$("uHost").value===""||$("uLat").value===""||$("uLon").value===""){alert("Choose host, latitude, and longitude columns.");return}
+ let added=0;const session=Date.now();
+ uploadedRows.forEach((r,idx)=>{
+   const name=uv(r,"uHost").trim(),lat=parseFloat(uv(r,"uLat")),lon=parseFloat(uv(r,"uLon"));if(!name||!Number.isFinite(lat)||!Number.isFinite(lon))return;
+   const hostId=uv(r,"uHostId").trim()||`UPLOAD:Host:${session}:${idx+1}`,pname=uv(r,"uParasite").trim(),pidRaw=uv(r,"uParasiteId").trim();
+   const date=uv(r,"uDate").trim(),ym=(date.match(/(?:19|20)\d{2}/)||[])[0],year=ym?+ym:-1,state=uv(r,"uState").trim(),country=uv(r,"uCountry").trim();
+   const hrIdx=D.hr.length;D.hr.push([addString("Uploaded CSV"),addString(hostId),addString(name),-1,-1,-1,-1,-1,null,null,null,null,null,-1,addString(date),year,addString(country),addString(state),-1,-1,lat,lon,null]);
+   const hid=D.h.length;D.h.push([addString("BIO:"+hostId),addString(name),-1,-1,-1,-1,-1,null,null,null,null,null,-1,addString(date),year,addString(country),addString(state),-1,-1,lat,lon,null,[hrIdx]]);
+   const parasiteName=pname||"Unspecified parasite observation",pid=pidRaw||`UPLOAD:Parasite:${session}:${idx+1}`,pidx=D.p.length;
+   D.p.push([addString(pid),addString("Uploaded CSV"),addString("uploaded_observation"),addString(parasiteName),-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,null]);
+   D.a.push([hid,pidx,addString("Uploaded CSV"),addString("uploaded_observation"),addString("user_supplied"),addString(hostId),addString(pid),addString(date),year,addString(country),addString(state),-1,lat,lon,-1]);
+   added++;
+ });
+ D.summary.biological_hosts+=added;D.summary.host_catalog_records+=added;D.summary.parasite_entities+=added;D.summary.associations+=added;
+ $("nHosts").textContent=D.summary.biological_hosts.toLocaleString();$("nHostRecords").textContent=D.summary.host_catalog_records.toLocaleString();$("nParasites").textContent=D.summary.parasite_entities.toLocaleString();
+ $("uploadNote").textContent=`Added ${added.toLocaleString()} CSV rows to this browser session.`;rebuild();render();
+};
 
 fetch("data/tracker.json").then(r=>{if(!r.ok)throw Error(r.status);return r.json()}).then(d=>{
  D=d;hostAssoc=Array.from({length:D.h.length},()=>[]);paraAssoc=Array.from({length:D.p.length},()=>[]);D.a.forEach((a,i)=>{hostAssoc[a[0]].push(i);paraAssoc[a[1]].push(i)});
