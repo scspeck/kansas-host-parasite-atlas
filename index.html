@@ -223,92 +223,65 @@ function render(){
    const h=host(hid);if(h.lat==null||h.lon==null)continue;
    const m=L.circleMarker([h.lat,h.lon]);
    styleHostMarker(m,hid);
-   m.on("click",e=>{if(e.originalEvent&&(e.originalEvent.ctrlKey||e.originalEvent.metaKey||e.originalEvent.shiftKey)){L.DomEvent.stopPropagation(e);toggleHost(hid,m)}});
    m.bindPopup(hostPopup(hid,ais));
-   // Single ordinary click opens the host; Ctrl/Cmd/Shift-click toggles selection.
+   m.on("click",()=>{toggleHost(hid,m);});
    m.on("contextmenu",e=>{L.DomEvent.stopPropagation(e);toggleHost(hid,m)});
    markers.push(m)
  }
  cluster.addLayers(markers);$("nVisible").textContent=markers.length.toLocaleString();
- $("resultNote").textContent=`${mm.length.toLocaleString()} associations match; ${markers.length.toLocaleString()} biological hosts mapped. Right-click or Ctrl/Cmd/Shift-click a host to select it.`;
+ $("resultNote").textContent=`${mm.length.toLocaleString()} associations match; ${markers.length.toLocaleString()} biological hosts mapped. Click a host to open it and toggle its selection.`;
  updateSelectionNote();
 }
 
-function download(selectedOnly=false){
- const mm=matches().filter(i=>!selectedOnly||selectedHosts.has(assoc(i).hid));
- const rows=mm.map(i=>{
-   const a=assoc(i),h=host(a.hid),p=para(a.pid),recs=h.records.map(j=>hr(j));
-   return{
-     biological_host_id:h.bio,
-     host_catalog_guids:recs.map(r=>r.guid).join("; "),
-     host_collections:recs.map(r=>r.source).join("; "),
-     host_scientific_name:h.name,
-     host_family:h.family,
-     host_genus:h.genus,
-     host_species:h.species,
-     host_sex:h.sex,
-     host_life_stage:h.stage,
-     host_weight_g:h.weight,
-     host_total_length_mm:h.total,
-     host_tail_length_mm:h.tail,
-     host_hind_foot_mm:h.hind,
-     host_ear_mm:h.ear,
-     host_reproductive_data:h.repro,
-     host_collection_date:h.date,
-     parasite_id:p.id,
-     parasite_source:p.source,
-     parasite_record_type:p.type,
-     parasite_scientific_name:p.name,
-     parasite_phylum:p.phylum,
-     parasite_class:p.pclass,
-     parasite_order:p.order,
-     parasite_family:p.family,
-     parasite_genus:p.genus,
-     parasite_species:p.species,
-     evidence_type:a.evidence,
-     relationship_status:a.status,
-     association_source:a.source,
-     source_host_guid:a.hostGuid,
-     association_date:a.date,
-     association_year:a.year===-1?"":a.year,
-     country:a.country,
-     state_province:a.state,
-     locality:a.locality,
-     latitude:a.lat,
-     longitude:a.lon,
-     evidence_note:a.note
-   };
- });
- if(!rows.length){
-   alert(selectedOnly
-     ? "No selected host associations are available to download."
-     : "No associations match the current filters.");
-   return;
- }
- const keys=Object.keys(rows[0]);
- const quote=v=>`"${String(v??"").replace(/"/g,'""')}"`;
- const csv="\uFEFF"+[
-   keys.join(","),
-   ...rows.map(r=>keys.map(k=>quote(r[k])).join(","))
- ].join("\n");
- const blob=new Blob([csv],{type:"text/csv;charset=utf-8"});
- const url=URL.createObjectURL(blob);
- const link=document.createElement("a");
- link.href=url;
- link.download=selectedOnly
-   ? "mammal_parasite_tracker_selected_hosts.csv"
-   : "mammal_parasite_tracker_filtered_associations.csv";
- document.body.appendChild(link);
- link.click();
- link.remove();
- setTimeout(()=>URL.revokeObjectURL(url),1000);
+
+function downloadFiltered(){
+  exportAssociationCSV(matches(),"mammal_parasite_tracker_filtered_associations.csv");
+}
+function downloadSelectedHosts(){
+  if(selectedHosts.size===0){alert("No host points are currently selected.");return}
+  const associationIndexes=[];
+  for(const hid of selectedHosts){
+    const rels=hostAssoc[hid]||[];
+    for(const associationIndex of rels){
+      if(passes(associationIndex))associationIndexes.push(associationIndex);
+    }
+  }
+  const unique=[...new Set(associationIndexes)];
+  if(!unique.length){alert("The selected hosts do not contain any associations matching the current filters.");return}
+  exportAssociationCSV(unique,"mammal_parasite_tracker_selected_hosts.csv");
+}
+function exportAssociationCSV(indexes,filename){
+  const rows=indexes.map(i=>{
+    const a=assoc(i),h=host(a.hid),p=para(a.pid),recs=h.records.map(j=>hr(j));
+    return{
+      biological_host_id:h.bio,host_catalog_guids:recs.map(r=>r.guid).join("; "),
+      host_collections:recs.map(r=>r.source).join("; "),host_scientific_name:h.name,
+      host_family:h.family,host_genus:h.genus,host_species:h.species,host_sex:h.sex,
+      host_life_stage:h.stage,host_weight_g:h.weight,host_total_length_mm:h.total,
+      host_tail_length_mm:h.tail,host_hind_foot_mm:h.hind,host_ear_mm:h.ear,
+      host_reproductive_data:h.repro,host_collection_date:h.date,
+      parasite_id:p.id,parasite_source:p.source,parasite_record_type:p.type,
+      parasite_scientific_name:p.name,parasite_phylum:p.phylum,parasite_class:p.pclass,
+      parasite_order:p.order,parasite_family:p.family,parasite_genus:p.genus,
+      parasite_species:p.species,evidence_type:a.evidence,relationship_status:a.status,
+      association_source:a.source,source_host_guid:a.hostGuid,association_date:a.date,
+      association_year:a.year===-1?"":a.year,country:a.country,state_province:a.state,
+      locality:a.locality,latitude:a.lat,longitude:a.lon,evidence_note:a.note
+    };
+  });
+  if(!rows.length){alert("There are no association records to download.");return}
+  const keys=Object.keys(rows[0]),quote=v=>`"${String(v??"").replace(/"/g,'""')}"`;
+  const csv="\uFEFF"+[keys.join(","),...rows.map(r=>keys.map(k=>quote(r[k])).join(","))].join("\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob);
+  const link=document.createElement("a");link.href=url;link.download=filename;link.style.display="none";
+  document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
 
 ["source","evidence","country","state","hostCollection","hostSex","hostStage","recordType"].forEach(id=>$(id).addEventListener("change",()=>{if(id==="country")$("state").value="";rebuild();render()}));
 ["hostName","minWeight","maxWeight","search"].forEach(id=>$(id).addEventListener("input",render));
 ["pPhylum","pClass","pOrder","pFamily","pGenus"].forEach(id=>$(id).addEventListener("change",()=>{rebuildTax();render()}));$("pName").onchange=render;
-$("download").onclick=()=>download(false);
-$("downloadSelected").onclick=()=>download(true);
+$("download").addEventListener("click",downloadFiltered);
+$("downloadSelected").addEventListener("click",downloadSelectedHosts);
 $("clearSelection").onclick=()=>{selectedHosts.clear();render()};
 $("reset").onclick=()=>{["source","evidence","country","state","hostCollection","hostName","hostSex","hostStage","minWeight","maxWeight","recordType","pPhylum","pClass","pOrder","pFamily","pGenus","pName","search"].forEach(id=>$(id).value="");selectedHosts.clear();$("yearSlider").noUiSlider.set([D.summary.min_year,D.summary.max_year]);rebuild();render()};
 
@@ -379,7 +352,10 @@ $("addUploaded").onclick=()=>{
  });
  D.summary.biological_hosts+=added;D.summary.host_catalog_records+=added;D.summary.parasite_entities+=added;D.summary.associations+=added;
  $("nHosts").textContent=D.summary.biological_hosts.toLocaleString();$("nHostRecords").textContent=D.summary.host_catalog_records.toLocaleString();$("nParasites").textContent=D.summary.parasite_entities.toLocaleString();
- $("uploadNote").textContent=`Added ${added.toLocaleString()} CSV rows to this browser session.`;rebuild();render();
+ $("uploadNote").textContent=`Added ${added.toLocaleString()} CSV rows to this browser session.`;
+ hostAssoc=Array.from({length:D.h.length},()=>[]);paraAssoc=Array.from({length:D.p.length},()=>[]);
+ D.a.forEach((a,i)=>{hostAssoc[a[0]].push(i);paraAssoc[a[1]].push(i)});
+ rebuild();render();
 };
 
 fetch("data/tracker.json").then(r=>{if(!r.ok)throw Error(r.status);return r.json()}).then(d=>{
