@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Mammal–Parasite Tracker</title>
+<title>Trait MMAP (Mapper for Mammals and Parasites)</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
@@ -30,8 +30,8 @@ a{color:#245f8d}details summary{cursor:pointer}.warn{font-size:.7rem;color:#6c54
 </head>
 <body>
 <aside>
-<h1>Mammal–Parasite Tracker</h1>
-<div class="subtitle">Host-focused mammal–parasite mapper using MSB:Mamm, MSB:Para, and KSB:Mamm. Parasites remain searchable, but the map displays biological mammal hosts; clicking a host lists its matching parasite records and links.</div>
+<h1>Trait MMAP (Mapper for Mammals and Parasites)</h1>
+<div class="subtitle">Explore mammal-parasite associations across traits, geography, and time. Filter existing records, select data spatially, download customized datasets, or upload your own data for interactive visualization.</div>
 
 
 <div class="stats">
@@ -100,6 +100,9 @@ a{color:#245f8d}details summary{cursor:pointer}.warn{font-size:.7rem;color:#6c54
 
 <div class="note small"><strong>Interpretation:</strong> MSB parasite records are independently cataloged vouchers. KSB parasite entries are positive detection observations from host attributes. Uploaded CSV records are temporary browser-session data. All parasite evidence remains listed beneath the host rather than becoming a separate map view.</div>
 <details class="note"><summary><strong>About shared hosts</strong></summary><p class="small">When a loaded KSB:Mamm record is explicitly linked as <i>same individual as</i> a loaded MSB:Mamm record, Host Mode counts and maps that biological individual once while preserving both catalog GUIDs in the popup and download.</p></details>
+<details class="note"><summary><strong>Trait MMAP</strong></summary><p class="small">Trait MMAP (Mapper for Mammals and Parasites) is an interactive research tool for exploring mammal-parasite associations in a specimen-based framework. The mapper integrates information about mammal hosts, associated parasites, biological traits, collection localities, dates, and source records into a searchable visualization.
+Trait MMAP is designed not only for viewing occurrence records, but also for interacting with them as research data. Users can filter records by host and parasite taxonomy, host traits, geography, collection date, and data source; select records directly from the map; and download the resulting host–parasite associations for further analysis.
+Users may also upload their own host-parasite datasets for visualization within Trait MMAP. Uploaded data can be mapped, searched, spatially selected, and explored alongside the existing dataset, allowing the mapper to function as both a biodiversity data resource and a reusable visualization tool.</p></details>
 </aside>
 <div id="map"></div>
 
